@@ -289,8 +289,10 @@ sidebarItems.forEach(item => {
 if (viewDropdownBtn) {
     viewDropdownBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        console.log('Dropdown clicked!');
         if (viewDropdownMenu) {
             viewDropdownMenu.classList.toggle('active');
+            console.log('Dropdown active:', viewDropdownMenu.classList.contains('active'));
         }
     });
 }

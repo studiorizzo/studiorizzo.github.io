@@ -1,14 +1,9 @@
 .header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  height: 64px;
-  background-color: #fff;
-  border-bottom: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  padding: 16px 0 0 0;
 }
 
-.left {
+.content {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -18,65 +13,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: transparent;
-  color: #374151;
+  width: 32px;
+  height: 32px;
+  margin-left: 16px;
+  padding: 0;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #24292f;
   cursor: pointer;
-  transition: background-color 0.15s;
+  transition: background-color 0.2s;
 }
 
 .menuBtn:hover {
-  background-color: #f3f4f6;
+  background-color: #f6f8fa;
 }
 
-.menuBtn svg {
-  width: 20px;
-  height: 20px;
-}
-
-@media (min-width: 768px) {
-  .menuBtn {
-    display: none;
-  }
-}
-
-.title {
-  font-size: 18px;
+.repoName {
+  font-size: 14px;
   font-weight: 600;
-  color: #111827;
-}
-
-.right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.userName {
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.logoutBtn {
-  padding: 8px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: transparent;
-  color: #374151;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-
-.logoutBtn:hover {
-  background-color: #f3f4f6;
-}
-
-@media (min-width: 768px) {
-  .header {
-    margin-left: 280px;
-  }
+  color: #24292f;
 }

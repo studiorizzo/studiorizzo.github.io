@@ -11,17 +11,8 @@ const searchResults = document.getElementById('search-results');
 
 let clientiExpanded = false;
 
-// Sample clients data
-const clients = [
-    { id: 1, name: 'Mario Rossi', code: 'MR001', type: 'Azienda' },
-    { id: 2, name: 'Giuseppe Verdi', code: 'GV002', type: 'Privato' },
-    { id: 3, name: 'Anna Bianchi', code: 'AB003', type: 'Azienda' },
-    { id: 4, name: 'Luca Ferrari', code: 'LF004', type: 'Privato' },
-    { id: 5, name: 'Sara Conti', code: 'SC005', type: 'Azienda' },
-    { id: 6, name: 'Marco Rizzo', code: 'MR006', type: 'Privato' },
-    { id: 7, name: 'Elena Marino', code: 'EM007', type: 'Azienda' },
-    { id: 8, name: 'Paolo Romano', code: 'PR008', type: 'Privato' },
-];
+// Clients data
+const clients = [];
 
 // Sidebar Functions
 function toggleSidebar() {

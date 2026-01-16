@@ -1,12 +1,17 @@
 // DOM Elements
+const menuToggle = document.getElementById('menu-toggle');
 const sidebar = document.getElementById('sidebar');
 const sidebarClose = document.getElementById('sidebar-close');
-const menuToggle = document.getElementById('menu-toggle');
 const overlay = document.getElementById('overlay');
+const clientiToggle = document.getElementById('clienti-toggle');
+const clientiSearch = document.getElementById('clienti-search');
+const clientiIcon = document.getElementById('clienti-icon');
 const searchInput = document.getElementById('client-search');
 const searchResults = document.getElementById('search-results');
 
-// Sample clients data (replace with actual data source)
+let clientiExpanded = false;
+
+// Sample clients data
 const clients = [
     { id: 1, name: 'Mario Rossi', code: 'MR001', type: 'Azienda' },
     { id: 2, name: 'Giuseppe Verdi', code: 'GV002', type: 'Privato' },
@@ -18,27 +23,28 @@ const clients = [
     { id: 8, name: 'Paolo Romano', code: 'PR008', type: 'Privato' },
 ];
 
-// Sidebar functions
-function openSidebar() {
-    sidebar.classList.add('open');
-    overlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
+// Sidebar Functions
+function toggleSidebar() {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
 }
 
 function closeSidebar() {
     sidebar.classList.remove('open');
     overlay.classList.remove('active');
-    document.body.style.overflow = '';
 }
 
-// Search functions
+function toggleClientiSearch() {
+    clientiExpanded = !clientiExpanded;
+    clientiSearch.classList.toggle('visible');
+    clientiIcon.innerHTML = clientiExpanded ?
+        '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"></path></svg>' :
+        '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215Z"></path></svg>';
+}
+
+// Search Functions
 function getInitials(name) {
-    return name
-        .split(' ')
-        .map(word => word[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
+    return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
 }
 
 function searchClients(query) {
@@ -63,77 +69,42 @@ function searchClients(query) {
             <div class="result-avatar">${getInitials(client.name)}</div>
             <div class="result-info">
                 <div class="result-name">${client.name}</div>
-                <div class="result-detail">${client.code} • ${client.type}</div>
+                <div class="result-detail">${client.code} · ${client.type}</div>
             </div>
         </div>
     `).join('');
 }
 
-function handleClientClick(clientId) {
-    const client = clients.find(c => c.id === parseInt(clientId));
-    if (client) {
-        console.log('Selected client:', client);
-        // Close sidebar on mobile after selection
-        if (window.innerWidth < 768) {
-            closeSidebar();
-        }
-    }
-}
-
 // Event Listeners
-if (menuToggle) {
-    menuToggle.addEventListener('click', openSidebar);
-}
-
-if (sidebarClose) {
-    sidebarClose.addEventListener('click', closeSidebar);
-}
-
-if (overlay) {
-    overlay.addEventListener('click', closeSidebar);
-}
+if (menuToggle) menuToggle.addEventListener('click', toggleSidebar);
+if (sidebarClose) sidebarClose.addEventListener('click', closeSidebar);
+if (overlay) overlay.addEventListener('click', closeSidebar);
+if (clientiToggle) clientiToggle.addEventListener('click', toggleClientiSearch);
 
 if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-        searchClients(e.target.value);
-    });
-
-    // Focus search on Cmd/Ctrl + K
-    document.addEventListener('keydown', (e) => {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-            e.preventDefault();
-            if (window.innerWidth < 768) {
-                openSidebar();
-            }
-            searchInput.focus();
-        }
-    });
+    searchInput.addEventListener('input', (e) => searchClients(e.target.value));
 }
 
 if (searchResults) {
     searchResults.addEventListener('click', (e) => {
         const item = e.target.closest('.search-result-item');
         if (item) {
-            handleClientClick(item.dataset.id);
+            const client = clients.find(c => c.id === parseInt(item.dataset.id));
+            if (client) {
+                console.log('Selected client:', client);
+                if (window.innerWidth < 768) closeSidebar();
+            }
         }
     });
 }
 
-// Close sidebar on Escape key
+// Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && sidebar.classList.contains('open')) {
         closeSidebar();
     }
-});
-
-// Handle window resize
-let resizeTimeout;
-window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-        if (window.innerWidth >= 768) {
-            overlay.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-    }, 100);
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        toggleSidebar();
+    }
 });

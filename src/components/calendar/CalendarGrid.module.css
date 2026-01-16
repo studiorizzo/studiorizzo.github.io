@@ -1,0 +1,142 @@
+.grid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.weekday {
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.days {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  overflow: hidden;
+}
+
+.day {
+  min-height: 100px;
+  padding: 8px;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #fff;
+  overflow: hidden;
+}
+
+.day:nth-child(7n) {
+  border-right: none;
+}
+
+.day.clickable {
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.day.clickable:hover {
+  background-color: #f9fafb;
+}
+
+.day.otherMonth {
+  background-color: #fafafa;
+}
+
+.day.otherMonth .dayNumber {
+  color: #d1d5db;
+}
+
+.day.today .dayNumber {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #111827;
+  color: #fff;
+  border-radius: 50%;
+}
+
+.dayNumber {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.scadenze {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scadenza {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  background-color: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.scadenza:hover {
+  background-color: #fde68a;
+}
+
+.scadenzaDesc {
+  color: #92400e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.scadenzaAmount {
+  color: #b45309;
+  font-weight: 600;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.moreScadenze {
+  font-size: 11px;
+  color: #6b7280;
+  padding: 2px 8px;
+}
+
+@media (max-width: 768px) {
+  .day {
+    min-height: 80px;
+    padding: 4px;
+  }
+
+  .dayNumber {
+    font-size: 12px;
+  }
+
+  .scadenza {
+    padding: 2px 4px;
+    font-size: 10px;
+  }
+
+  .scadenzaAmount {
+    display: none;
+  }
+}

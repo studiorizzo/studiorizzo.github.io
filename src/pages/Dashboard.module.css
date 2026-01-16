@@ -1,0 +1,9 @@
+.dashboard {
+  height: 100%;
+}
+
+@media (min-width: 768px) {
+  .dashboard {
+    margin-left: 280px;
+  }
+}

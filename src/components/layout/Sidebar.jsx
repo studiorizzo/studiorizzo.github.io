@@ -4,17 +4,17 @@ import styles from './Sidebar.module.css'
 
 function Sidebar({ isOpen, onClose }) {
   const { isStudio } = useAuth()
-  const [clientiOpen, setClientiOpen] = useState(false)
-  const [scadenzeOpen, setScadenzeOpen] = useState(false)
+  const [clientiVisible, setClientiVisible] = useState(false)
+  const [scadenzeVisible, setScadenzeVisible] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
   return (
     <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
       <div className={styles.header}>
-        <span className={styles.logo}>Studio Rizzo</span>
+        <div className={styles.logo}>studiorizzo</div>
         <button className={styles.closeBtn} onClick={onClose}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 6L6 18M6 6l12 12" />
+          <svg viewBox="0 0 16 16" fill="currentColor">
+            <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"></path>
           </svg>
         </button>
       </div>
@@ -22,28 +22,22 @@ function Sidebar({ isOpen, onClose }) {
       <nav className={styles.nav}>
         {isStudio() && (
           <div className={styles.section}>
-            <button
-              className={styles.sectionHeader}
-              onClick={() => setClientiOpen(!clientiOpen)}
-            >
-              <span>Clienti</span>
-              <svg
-                className={`${styles.chevron} ${clientiOpen ? styles.open : ''}`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-            </button>
-            {clientiOpen && (
+            <div className={styles.sectionHeader} onClick={() => setClientiVisible(!clientiVisible)}>
+              <span className={styles.sectionTitle}>Clienti</span>
+              <span className={styles.sectionIcon}>
+                {clientiVisible ? (
+                  <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"></path></svg>
+                ) : (
+                  <svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215Z"></path></svg>
+                )}
+              </span>
+            </div>
+            {clientiVisible && (
               <div className={styles.sectionContent}>
-                <div className={styles.searchWrapper}>
-                  <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="M21 21l-4.35-4.35" />
-                  </svg>
+                <div className={styles.searchContainer}>
+                  <div className={styles.searchIcon}>
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215Z"></path></svg>
+                  </div>
                   <input
                     type="text"
                     className={styles.searchInput}
@@ -52,28 +46,24 @@ function Sidebar({ isOpen, onClose }) {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
+                <div className={styles.searchResults}></div>
               </div>
             )}
           </div>
         )}
 
         <div className={styles.section}>
-          <button
-            className={styles.sectionHeader}
-            onClick={() => setScadenzeOpen(!scadenzeOpen)}
-          >
-            <span>Scadenze</span>
-            <svg
-              className={`${styles.chevron} ${scadenzeOpen ? styles.open : ''}`}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </button>
-          {scadenzeOpen && (
+          <div className={styles.sectionHeader} onClick={() => setScadenzeVisible(!scadenzeVisible)}>
+            <span className={styles.sectionTitle}>Scadenze</span>
+            <span className={styles.sectionIcon}>
+              {scadenzeVisible ? (
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"></path></svg>
+              ) : (
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 9l6 6 6-6"></path></svg>
+              )}
+            </span>
+          </div>
+          {scadenzeVisible && (
             <div className={styles.sectionContent}>
               <p className={styles.placeholder}>Nessuna scadenza imminente</p>
             </div>

@@ -26,8 +26,7 @@ function Login() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h1 className={styles.logo}>Studio Rizzo</h1>
-        <p className={styles.subtitle}>Gestione Scadenze</p>
+        <h1 className={styles.logo}>studiorizzo</h1>
 
         <div className={styles.tabs}>
           <button

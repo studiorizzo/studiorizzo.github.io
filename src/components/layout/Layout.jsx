@@ -9,8 +9,8 @@ function Layout({ children }) {
   return (
     <div className={styles.layout}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className={styles.main}>
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+      <div className={`${styles.main} ${sidebarOpen ? styles.shifted : ''}`}>
+        <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         <main className={styles.content}>
           {children}
         </main>

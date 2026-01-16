@@ -1,9 +1,6 @@
 .dashboard {
-  height: 100%;
-}
-
-@media (min-width: 768px) {
-  .dashboard {
-    margin-left: 280px;
-  }
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }

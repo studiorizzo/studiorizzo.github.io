@@ -1,9 +1,8 @@
 .calendar {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
   background-color: #fff;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #d0d7de;
   overflow: hidden;
 }

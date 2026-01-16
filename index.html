@@ -4,59 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Studio Rizzo</title>
+    <title>studiorizzo</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <aside class="sidebar" id="sidebar">
+    <header class="top-header">
+        <div class="top-header-content">
+            <button class="menu-btn" id="menu-toggle">
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+                    <path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm0 5A.75.75 0 0 1 1.75 7h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 7.75ZM1.75 12h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5Z"></path>
+                </svg>
+            </button>
+            <span class="repo-name">studiorizzo</span>
+        </div>
+    </header>
+
+    <aside id="sidebar">
         <div class="sidebar-header">
-            <div class="logo">Studio Rizzo</div>
-            <button class="sidebar-toggle" id="sidebar-close">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
+            <div class="sidebar-logo">studiorizzo</div>
+            <button class="sidebar-close" id="sidebar-close">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"></path>
                 </svg>
             </button>
         </div>
 
-        <div class="sidebar-content">
-            <div class="search-section">
-                <div class="search-label">Clienti</div>
-                <div class="search-wrapper">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="M21 21l-4.35-4.35"/>
-                    </svg>
-                    <input type="text" class="search-input" id="client-search" placeholder="Cerca cliente..." autocomplete="off">
+        <nav class="sidebar-nav">
+            <div class="clienti-section">
+                <div class="clienti-header" id="clienti-toggle">
+                    <span class="clienti-title">Clienti</span>
+                    <span class="clienti-toggle" id="clienti-icon">
+                        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215Z"></path></svg>
+                    </span>
                 </div>
-                <div class="search-results" id="search-results"></div>
+                <div class="clienti-search" id="clienti-search">
+                    <div class="search-container">
+                        <div class="search-icon">
+                            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215Z"></path></svg>
+                        </div>
+                        <input type="text" class="search-input" id="client-search" placeholder="Cerca cliente...">
+                    </div>
+                    <div class="search-results" id="search-results"></div>
+                </div>
             </div>
-        </div>
+        </nav>
     </aside>
 
-    <div class="overlay" id="overlay"></div>
+    <div id="overlay"></div>
 
-    <main class="main-content">
-        <header class="header">
-            <button class="menu-toggle" id="menu-toggle">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 12h18M3 6h18M3 18h18"/>
-                </svg>
-            </button>
-            <h1 class="page-title">Dashboard</h1>
-        </header>
-
-        <div class="content-area" id="content-area">
-            <div class="welcome-card">
-                <div class="welcome-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-                        <polyline points="9 22 9 12 15 12 15 22"/>
-                    </svg>
-                </div>
-                <h2>Benvenuto in Studio Rizzo</h2>
-                <p>Cerca un cliente per iniziare</p>
-            </div>
-        </div>
+    <main class="main">
     </main>
 
     <script src="script.js"></script>

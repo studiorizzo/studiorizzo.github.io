@@ -94,12 +94,33 @@
 
 .actions {
   display: flex;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 8px;
 }
 
+.rightActions {
+  display: flex;
+  gap: 12px;
+}
+
+.deleteBtn {
+  padding: 12px 24px;
+  border: 1px solid #dc2626;
+  border-radius: 6px;
+  background: #fff;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.deleteBtn:hover {
+  background-color: #fef2f2;
+}
+
 .cancelBtn {
-  flex: 1;
   padding: 12px 24px;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
@@ -116,7 +137,6 @@
 }
 
 .saveBtn {
-  flex: 1;
   padding: 12px 24px;
   border: none;
   border-radius: 6px;

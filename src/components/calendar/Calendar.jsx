@@ -5,26 +5,18 @@ import CalendarGrid from './CalendarGrid'
 import ScadenzaModal from './ScadenzaModal'
 import styles from './Calendar.module.css'
 
-// Demo data - will be replaced with real data source
-const demoScadenze = [
-  { id: '1', data: '2024-02-10', descrizione: 'Scadenza IVA', importo: 10000, clienteId: 'c1', clienteNome: 'Azienda Alfa' },
-  { id: '2', data: '2024-02-10', descrizione: 'Mutuo', importo: 1500, clienteId: 'c1', clienteNome: 'Azienda Alfa' },
-  { id: '3', data: '2024-02-15', descrizione: 'Rateizzazione cartelle', importo: 2500, clienteId: 'c2', clienteNome: 'Ditta Beta' },
-  { id: '4', data: '2024-02-20', descrizione: 'F24', importo: 3200, clienteId: 'c1', clienteNome: 'Azienda Alfa' },
-  { id: '5', data: '2024-02-28', descrizione: 'INPS', importo: 800, clienteId: 'c2', clienteNome: 'Ditta Beta' },
-]
-
 function Calendar() {
   const { user, isStudio } = useAuth()
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [scadenze, setScadenze] = useState([])
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState(null)
   const [selectedScadenza, setSelectedScadenza] = useState(null)
 
   // Filter scadenze based on user role
-  const scadenze = isStudio()
-    ? demoScadenze
-    : demoScadenze.filter(s => s.clienteId === user?.clienteId)
+  const filteredScadenze = isStudio()
+    ? scadenze
+    : scadenze.filter(s => s.clienteId === user?.clienteId)
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
@@ -61,8 +53,24 @@ function Calendar() {
   }
 
   const handleSaveScadenza = (data) => {
-    console.log('Save scadenza:', data)
-    // TODO: Implement save logic
+    if (data.id) {
+      // Modifica scadenza esistente
+      setScadenze(prev => prev.map(s =>
+        s.id === data.id ? { ...s, ...data } : s
+      ))
+    } else {
+      // Nuova scadenza
+      const newScadenza = {
+        ...data,
+        id: Date.now().toString()
+      }
+      setScadenze(prev => [...prev, newScadenza])
+    }
+    handleModalClose()
+  }
+
+  const handleDeleteScadenza = (id) => {
+    setScadenze(prev => prev.filter(s => s.id !== id))
     handleModalClose()
   }
 
@@ -76,7 +84,7 @@ function Calendar() {
       />
       <CalendarGrid
         currentDate={currentDate}
-        scadenze={scadenze}
+        scadenze={filteredScadenze}
         onDayClick={handleDayClick}
         onScadenzaClick={handleScadenzaClick}
         canEdit={isStudio()}
@@ -87,6 +95,7 @@ function Calendar() {
           scadenza={selectedScadenza}
           onClose={handleModalClose}
           onSave={handleSaveScadenza}
+          onDelete={selectedScadenza ? handleDeleteScadenza : null}
         />
       )}
     </div>

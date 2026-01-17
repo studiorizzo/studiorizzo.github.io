@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import styles from './ScadenzaModal.module.css'
 
-function ScadenzaModal({ date, scadenza, onClose, onSave }) {
+function ScadenzaModal({ date, scadenza, onClose, onSave, onDelete }) {
   const [formData, setFormData] = useState({
     descrizione: '',
     importo: '',
@@ -37,6 +37,12 @@ function ScadenzaModal({ date, scadenza, onClose, onSave }) {
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleDelete = () => {
+    if (onDelete && scadenza) {
+      onDelete(scadenza.id)
+    }
   }
 
   return (
@@ -110,12 +116,19 @@ function ScadenzaModal({ date, scadenza, onClose, onSave }) {
           </div>
 
           <div className={styles.actions}>
-            <button type="button" className={styles.cancelBtn} onClick={onClose}>
-              Annulla
-            </button>
-            <button type="submit" className={styles.saveBtn}>
-              Salva
-            </button>
+            {onDelete && (
+              <button type="button" className={styles.deleteBtn} onClick={handleDelete}>
+                Elimina
+              </button>
+            )}
+            <div className={styles.rightActions}>
+              <button type="button" className={styles.cancelBtn} onClick={onClose}>
+                Annulla
+              </button>
+              <button type="submit" className={styles.saveBtn}>
+                Salva
+              </button>
+            </div>
           </div>
         </form>
       </div>

@@ -3,12 +3,20 @@
   height: 64px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
 }
 
-.content {
+.left {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .menuBtn {
@@ -17,7 +25,6 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  margin-left: 16px;
   padding: 0;
   border: 1px solid #d0d7de;
   border-radius: 6px;
@@ -37,13 +44,7 @@
   color: #24292f;
 }
 
-/* Theme controls */
-.themeControls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+/* Theme toggle button */
 .themeBtn {
   display: flex;
   align-items: center;

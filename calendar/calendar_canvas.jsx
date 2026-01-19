@@ -1,16 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 
-/**
- * SPACETIME CALENDAR v5.9
- * 
- * Nuova logica: redistribuzione proporzionale dell'area
- * - Area totale costante (come universo finito di Einstein)
- * - Celle vuote hanno massa basata sulla media degli importi
- * - Nessun limite artificiale, le proporzioni derivano dalle masse
- */
-
-const VERSION = '5.9.6';
-
 const CONFIG = {
   cols: 7,
   rows: 6,
@@ -478,13 +467,11 @@ export default function SpacetimeCalendar() {
     calendarDays: [],
     eventsByDate: {},
     hoveredCell: -1,
-    showGrid: true,
   });
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [hoveredCell, setHoveredCell] = useState(-1);
-  const [showGrid, setShowGrid] = useState(true);
   
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -567,22 +554,10 @@ export default function SpacetimeCalendar() {
     });
   }, [calendarDays, eventsByDate]);
   
-  const stats = useMemo(() => {
-    const monthEvents = events.filter(e => 
-      e.date.getMonth() === currentDate.getMonth() && 
-      e.date.getFullYear() === currentDate.getFullYear()
-    );
-    const totalAmount = monthEvents.reduce((sum, e) => sum + e.amount, 0);
-    const validMasses = masses.filter(m => m > 0);
-    const totalMass = validMasses.reduce((sum, m) => sum + m, 0);
-    const maxMass = Math.max(...validMasses, 0);
-    return { totalAmount, totalMass, maxMass, eventCount: monthEvents.length };
-  }, [events, masses, currentDate]);
-  
   // Aggiorna dataRef quando cambiano i dati
   useEffect(() => {
-    dataRef.current = { calendarDays, eventsByDate, hoveredCell, showGrid };
-  }, [calendarDays, eventsByDate, hoveredCell, showGrid]);
+    dataRef.current = { calendarDays, eventsByDate, hoveredCell };
+  }, [calendarDays, eventsByDate, hoveredCell]);
   
   // Aggiorna masse nella mesh
   useEffect(() => {
@@ -600,8 +575,8 @@ export default function SpacetimeCalendar() {
     
     const animate = () => {
       meshRef.current.update();
-      const { calendarDays, eventsByDate, hoveredCell, showGrid } = dataRef.current;
-      rendererRef.current.render(calendarDays, eventsByDate, hoveredCell, showGrid);
+      const { calendarDays, eventsByDate, hoveredCell } = dataRef.current;
+      rendererRef.current.render(calendarDays, eventsByDate, hoveredCell, true);
       rafRef.current = requestAnimationFrame(animate);
     };
     animate();
@@ -641,29 +616,14 @@ export default function SpacetimeCalendar() {
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '1.4rem', background: 'linear-gradient(135deg, #e8e8f0, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Spacetime Calendar
-            </h1>
-            <span style={{ fontSize: '0.65rem', color: '#6366f1' }}>v{VERSION}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
-              style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 12px', borderRadius: 4, cursor: 'pointer' }}>←</button>
-            <span style={{ minWidth: 160, textAlign: 'center', textTransform: 'capitalize' }}>
-              {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
-            </span>
-            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
-              style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 12px', borderRadius: 4, cursor: 'pointer' }}>→</button>
-          </div>
-        </div>
-        
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: 24, marginBottom: 10, padding: '8px 12px', background: 'rgba(99,102,241,0.05)', borderRadius: 6, flexWrap: 'wrap' }}>
-          <div><div style={{ fontSize: 10, color: '#666' }}>MASSA</div><div style={{ color: '#818cf8' }}>{stats.totalMass.toFixed(0)} M☉</div></div>
-          <div><div style={{ fontSize: 10, color: '#666' }}>FLUSSO</div><div style={{ color: '#818cf8' }}>€{stats.totalAmount.toLocaleString('it-IT')}</div></div>
-          <div><div style={{ fontSize: 10, color: '#666' }}>EVENTI</div><div style={{ color: '#818cf8' }}>{stats.eventCount}</div></div>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 12, gap: 12 }}>
+          <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
+            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 12px', borderRadius: 4, cursor: 'pointer' }}>←</button>
+          <span style={{ minWidth: 160, textAlign: 'center', textTransform: 'capitalize' }}>
+            {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+          </span>
+          <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
+            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 12px', borderRadius: 4, cursor: 'pointer' }}>→</button>
         </div>
         
         {/* Canvas */}
@@ -675,24 +635,6 @@ export default function SpacetimeCalendar() {
             onMouseLeave={() => setHoveredCell(-1)}
             style={{ display: 'block', cursor: 'pointer' }}
           />
-        </div>
-        
-        {/* Controls */}
-        <div style={{ display: 'flex', gap: 12, marginTop: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => setShowGrid(!showGrid)} style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#818cf8', padding: '6px 12px', borderRadius: 5, cursor: 'pointer', fontSize: 12 }}>
-            {showGrid ? '⬜ Griglia' : '⬛ Griglia'}
-          </button>
-          <span style={{ fontSize: 12, color: '#555' }}>💡 Clicca su un giorno per aggiungere pagamenti</span>
-        </div>
-        
-        {/* Legend */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 10, padding: '8px 12px', background: 'rgba(99,102,241,0.04)', borderRadius: 6 }}>
-          {Object.entries(PAYMENT_TYPES).map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#888' }}>
-              <span style={{ width: 8, height: 8, background: v.color, borderRadius: 2 }} />
-              <span>{v.icon} {v.label}</span>
-            </div>
-          ))}
         </div>
       </div>
       

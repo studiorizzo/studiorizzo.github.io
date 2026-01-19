@@ -1,18 +1,5 @@
 import React, { useState, useMemo } from 'react';
 
-/**
- * SPACETIME CALENDAR v1.4
- * 
- * Cambiamenti da v1.3:
- * - Hover cella today: stesso comportamento delle altre celle (z-index, bordo, sfondo)
- * - Tutte le celle coperte emergono uniformemente all'hover
- * 
- * Limiti CSS (da risolvere in v2.0):
- * - La griglia sottostante resta rigida
- * - Le celle adiacenti non si comprimono realmente
- */
-
-const VERSION = '1.4';
 
 // Tipi di pagamento con le loro proprietà
 const PAYMENT_TYPES = {
@@ -296,32 +283,6 @@ export default function SpacetimeCalendar() {
     });
     return grouped;
   }, [events]);
-
-  // Calcola massa per ogni cella
-  const massByIndex = useMemo(() => {
-    return calendarDays.map(d => {
-      const dayEvents = eventsByDate[d.date.toDateString()] || [];
-      return calculateCellMass(dayEvents);
-    });
-  }, [calendarDays, eventsByDate]);
-
-  // Statistiche
-  const totalMonthMass = useMemo(() => {
-    return calendarDays
-      .filter(d => d.isCurrentMonth)
-      .reduce((total, d) => {
-        const dayEvents = eventsByDate[d.date.toDateString()] || [];
-        return total + calculateCellMass(dayEvents);
-      }, 0);
-  }, [calendarDays, eventsByDate]);
-
-  const totalMonthAmount = useMemo(() => {
-    return events
-      .filter(e => e.date.getMonth() === currentDate.getMonth() && e.date.getFullYear() === currentDate.getFullYear())
-      .reduce((total, e) => total + e.amount, 0);
-  }, [events, currentDate]);
-
-  const maxDayMass = useMemo(() => Math.max(...massByIndex), [massByIndex]);
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -1080,11 +1041,6 @@ export default function SpacetimeCalendar() {
         <div className="calendar-container">
           {/* Header */}
           <header className="calendar-header">
-            <div className="header-left">
-              <h1 className="calendar-title">Spacetime Calendar</h1>
-              <span className="calendar-version">Version {VERSION} — Clean Hover</span>
-              <p className="calendar-subtitle">La massa dei pagamenti curva lo spazio-tempo</p>
-            </div>
             <nav className="nav-controls">
               <button className="nav-btn" onClick={handlePrevMonth}>← Prec</button>
               <span className="current-month">
@@ -1093,29 +1049,6 @@ export default function SpacetimeCalendar() {
               <button className="nav-btn" onClick={handleNextMonth}>Succ →</button>
             </nav>
           </header>
-          
-          {/* Statistiche */}
-          <div className="month-stats">
-            <div className="stat-item">
-              <span className="stat-label">Massa Totale</span>
-              <span className="stat-value">{totalMonthMass.toFixed(0)} M☉</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Flusso Monetario</span>
-              <span className="stat-value">€{totalMonthAmount.toLocaleString('it-IT')}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Picco Massa</span>
-              <span className="stat-value">{maxDayMass.toFixed(0)} M☉</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Eventi</span>
-              <span className="stat-value">{events.filter(e => 
-                e.date.getMonth() === currentDate.getMonth() && 
-                e.date.getFullYear() === currentDate.getFullYear()
-              ).length}</span>
-            </div>
-          </div>
           
           {/* Intestazione giorni */}
           <div className="weekdays-header">
@@ -1136,30 +1069,6 @@ export default function SpacetimeCalendar() {
                 onClick={handleCellClick}
               />
             ))}
-          </div>
-          
-          {/* Legenda */}
-          <div className="legend">
-            {Object.entries(PAYMENT_TYPES).map(([key, { label, icon, baseColor, massMultiplier }]) => (
-              <div key={key} className="legend-item">
-                <span className="legend-color" style={{ background: baseColor }} />
-                <span>{icon} {label} (×{massMultiplier})</span>
-              </div>
-            ))}
-          </div>
-          
-          {/* Note versione */}
-          <div className="version-notes">
-            <h4>v1.4 Changelog</h4>
-            <ul>
-              <li>Hover today: stesso comportamento delle altre celle</li>
-              <li>Tutte le celle coperte emergono con lo stesso stile all'hover</li>
-            </ul>
-            <h4>Limiti CSS (da risolvere in v2.0)</h4>
-            <ul>
-              <li>La griglia sottostante resta rigida</li>
-              <li>Le celle adiacenti non si comprimono realmente</li>
-            </ul>
           </div>
         </div>
         

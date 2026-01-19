@@ -268,8 +268,10 @@ class CalendarRenderer {
     const dpr = window.devicePixelRatio || 1;
     this.canvas.width = canvasWidth * dpr;
     this.canvas.height = canvasHeight * dpr;
-    // NON impostare style.width/height - il canvas riempie il wrapper via CSS
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+    // Dimensioni esplicite per evitare stretching
+    this.canvas.style.width = canvasWidth + 'px';
+    this.canvas.style.height = canvasHeight + 'px';
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.scale(dpr, dpr);
   }
   
@@ -697,7 +699,7 @@ export default function SpacetimeCalendar() {
           onMouseMove={handleMouseMove}
           onClick={handleClick}
           onMouseLeave={() => setHoveredCell(-1)}
-          style={{ display: 'block', width: '100%', height: '100%', cursor: 'pointer' }}
+          style={{ display: 'block', cursor: 'pointer' }}
         />
       </div>
       

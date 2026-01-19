@@ -41,7 +41,7 @@ function Header({ onMenuClick }) {
   const [isScrolled, setIsScrolled] = useState(false)
 
   // Mostra controlli tema solo su calendario-canvas-light
-  const showThemeControls = location.pathname === '/calendario-canvas-light'
+  const showThemeControls = location.pathname.includes('calendario-canvas-light')
 
   // Detect scroll
   useEffect(() => {

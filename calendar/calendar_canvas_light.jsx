@@ -100,6 +100,20 @@ const MD3_COLORS = {
   },
 };
 
+// Colori header calendario
+const CALENDAR_HEADER_COLORS = {
+  light: {
+    standard: { background: '#dbe1ff', text: '#3d4665' },
+    medium: { background: '#636c8d', text: '#ffffff' },
+    high: { background: '#3f4867', text: '#ffffff' },
+  },
+  dark: {
+    standard: { background: '#3d4665', text: '#dbe1ff' },
+    medium: { background: '#878fb3', text: '#000000' },
+    high: { background: '#b8c1e7', text: '#010926' },
+  },
+};
+
 const calculateMass = (events) => {
   if (!events?.length) return 0;
   return events.reduce((total, e) => {
@@ -542,6 +556,10 @@ export default function SpacetimeCalendarLight() {
     return MD3_COLORS[mode][contrast];
   }, [mode, contrast]);
 
+  const headerColors = useMemo(() => {
+    return CALENDAR_HEADER_COLORS[mode][contrast];
+  }, [mode, contrast]);
+
   const canvasWrapperRef = useRef(null);
   const canvasRef = useRef(null);
   const meshRef = useRef(null);
@@ -752,21 +770,21 @@ export default function SpacetimeCalendarLight() {
         alignItems: 'center',
         padding: '12px 16px',
         borderBottom: `1px solid ${colors.outlineVariant}`,
-        background: colors.surface,
+        background: headerColors.background,
         flexShrink: 0
       }}>
-        <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '18px', fontWeight: 500, textTransform: 'capitalize', color: colors.onSurface }}>
+        <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '18px', fontWeight: 500, textTransform: 'capitalize', color: headerColors.text }}>
           {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button onClick={handleToday}
-            style={{ fontFamily: "'Orbitron', sans-serif", background: colors.surface, border: `1px solid ${colors.outlineVariant}`, color: colors.onSurface, padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontSize: '14px' }}>Oggi</button>
+            style={{ fontFamily: "'Orbitron', sans-serif", background: 'transparent', border: `1px solid ${headerColors.text}40`, color: headerColors.text, padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontSize: '14px' }}>Oggi</button>
           <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
-            style={{ background: colors.surface, border: `1px solid ${colors.outlineVariant}`, color: colors.onSurface, padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
+            style={{ background: 'transparent', border: `1px solid ${headerColors.text}40`, color: headerColors.text, padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
           </button>
           <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
-            style={{ background: colors.surface, border: `1px solid ${colors.outlineVariant}`, color: colors.onSurface, padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
+            style={{ background: 'transparent', border: `1px solid ${headerColors.text}40`, color: headerColors.text, padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
           </button>
         </div>

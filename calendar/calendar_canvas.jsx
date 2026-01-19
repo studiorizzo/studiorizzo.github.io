@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 const BASE_CONFIG = {
   cols: 7,
   rows: 6,
-  padding: 20,
+  padding: 0,
   headerHeight: 30,
   emptyMassMultiplier: 0.9,
   animationSpeed: 0.1,
@@ -580,16 +580,20 @@ export default function SpacetimeCalendar() {
     }
   }, [masses, emptyMass]);
   
-  // Resize observer - osserva il wrapper del canvas
+  // Resize observer - calcola altezza dal rapporto 7:6 delle celle
   useEffect(() => {
     if (!canvasWrapperRef.current) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          setCanvasSize({ width: Math.floor(width), height: Math.floor(height) });
+        const { width } = entry.contentRect;
+        if (width > 0) {
+          // Celle con rapporto 7:6 (larghezza:altezza)
+          const cellWidth = width / BASE_CONFIG.cols;
+          const cellHeight = cellWidth * (6 / 7);
+          const canvasHeight = BASE_CONFIG.headerHeight + (cellHeight * BASE_CONFIG.rows);
+          setCanvasSize({ width: Math.floor(width), height: Math.floor(canvasHeight) });
         }
       }
     });
@@ -664,13 +668,9 @@ export default function SpacetimeCalendar() {
   return (
     <div
       style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
         fontFamily: "'Segoe UI', system-ui, sans-serif",
         background: '#0a0a12',
         border: '1px solid #d0d7de',
-        overflow: 'hidden',
         color: '#e8e8f0',
       }}
     >
@@ -692,8 +692,8 @@ export default function SpacetimeCalendar() {
           </button>
         </div>
       </div>
-      {/* Canvas wrapper - minHeight 500px come Scadenze (6 righe × ~83px) */}
-      <div ref={canvasWrapperRef} style={{ flex: 1, minHeight: 500, background: '#0a0a12' }}>
+      {/* Canvas wrapper - altezza calcolata dal rapporto 7:6 celle */}
+      <div ref={canvasWrapperRef} style={{ background: '#0a0a12' }}>
         <canvas
           ref={canvasRef}
           onMouseMove={handleMouseMove}

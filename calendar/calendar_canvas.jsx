@@ -580,7 +580,7 @@ export default function SpacetimeCalendar() {
     }
   }, [masses, emptyMass]);
   
-  // Resize observer - calcola altezza dal rapporto 7:6 delle celle
+  // Resize observer - calcola altezza dal rapporto originale 860:630
   useEffect(() => {
     if (!canvasWrapperRef.current) return;
 
@@ -589,10 +589,9 @@ export default function SpacetimeCalendar() {
       if (entry) {
         const { width } = entry.contentRect;
         if (width > 0) {
-          // Celle con rapporto 7:6 (larghezza:altezza)
-          const cellWidth = width / BASE_CONFIG.cols;
-          const cellHeight = cellWidth * (6 / 7);
-          const canvasHeight = BASE_CONFIG.headerHeight + (cellHeight * BASE_CONFIG.rows);
+          // Rapporto griglia originale: 860x630 (senza padding e header)
+          const gridHeight = width * (630 / 860);
+          const canvasHeight = BASE_CONFIG.headerHeight + gridHeight;
           setCanvasSize({ width: Math.floor(width), height: Math.floor(canvasHeight) });
         }
       }

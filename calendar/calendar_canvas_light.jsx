@@ -128,6 +128,20 @@ const WEEKDAYS_COLORS = {
   },
 };
 
+// Colori celle calendario
+const CELL_COLORS = {
+  light: {
+    standard: { notCurrentMonth: '#e3e9eb', checker1: '#eff5f6', checker2: '#e9eff0', hover: '#d5dbdd' },
+    medium: { notCurrentMonth: '#e3e9eb', checker1: '#eff5f6', checker2: '#e9eff0', hover: '#d5dbdd' },
+    high: { notCurrentMonth: '#e3e9eb', checker1: '#eff5f6', checker2: '#e9eff0', hover: '#d5dbdd' },
+  },
+  dark: {
+    standard: { notCurrentMonth: '#252b2c', checker1: '#171d1e', checker2: '#1b2122', hover: '#343a3c' },
+    medium: { notCurrentMonth: '#252b2c', checker1: '#171d1e', checker2: '#1b2122', hover: '#343a3c' },
+    high: { notCurrentMonth: '#252b2c', checker1: '#171d1e', checker2: '#1b2122', hover: '#343a3c' },
+  },
+};
+
 const calculateMass = (events) => {
   if (!events?.length) return 0;
   return events.reduce((total, e) => {
@@ -350,18 +364,20 @@ class VertexMesh {
 // RENDERER - DYNAMIC THEME
 // ============================================
 class CalendarRenderer {
-  constructor(canvas, mesh, colors, weekdaysColors) {
+  constructor(canvas, mesh, colors, weekdaysColors, cellColors) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.mesh = mesh;
     this.colors = colors;
     this.weekdaysColors = weekdaysColors;
+    this.cellColors = cellColors;
     this.setupCanvas();
   }
 
-  setColors(colors, weekdaysColors) {
+  setColors(colors, weekdaysColors, cellColors) {
     this.colors = colors;
     this.weekdaysColors = weekdaysColors;
+    this.cellColors = cellColors;
   }
 
   setupCanvas() {
@@ -486,6 +502,12 @@ class CalendarRenderer {
     const hasEvents = events.length > 0 && day.isCurrentMonth;
     const color = hasEvents ? PAYMENT_TYPES[events[0].type]?.color : null;
     const c = this.colors;
+    const cc = this.cellColors;
+
+    // Calcola riga e colonna per pattern scacchiera
+    const row = Math.floor(index / 7);
+    const col = index % 7;
+    const isEven = (row + col) % 2 === 0;
 
     ctx.beginPath();
     ctx.moveTo(v.topLeft.x, v.topLeft.y);
@@ -495,11 +517,13 @@ class CalendarRenderer {
     ctx.closePath();
 
     if (!day.isCurrentMonth) {
-      ctx.fillStyle = c.surfaceContainer;
+      ctx.fillStyle = cc.notCurrentMonth;
+    } else if (isHovered) {
+      ctx.fillStyle = cc.hover;
     } else if (hasEvents) {
-      ctx.fillStyle = color + (isHovered ? '25' : '15');
+      ctx.fillStyle = color + '15';
     } else {
-      ctx.fillStyle = isHovered ? c.surfaceContainerHigh : c.surface;
+      ctx.fillStyle = isEven ? cc.checker1 : cc.checker2;
     }
     ctx.fill();
 
@@ -581,6 +605,10 @@ export default function SpacetimeCalendarLight() {
     return WEEKDAYS_COLORS[mode][contrast];
   }, [mode, contrast]);
 
+  const cellColors = useMemo(() => {
+    return CELL_COLORS[mode][contrast];
+  }, [mode, contrast]);
+
   const canvasWrapperRef = useRef(null);
   const canvasRef = useRef(null);
   const meshRef = useRef(null);
@@ -606,9 +634,9 @@ export default function SpacetimeCalendarLight() {
   // Aggiorna colori nel renderer quando cambiano
   useEffect(() => {
     if (rendererRef.current) {
-      rendererRef.current.setColors(colors, weekdaysColors);
+      rendererRef.current.setColors(colors, weekdaysColors, cellColors);
     }
-  }, [colors, weekdaysColors]);
+  }, [colors, weekdaysColors, cellColors]);
 
   const calendarDays = useMemo(() => {
     const year = currentDate.getFullYear();
@@ -720,7 +748,7 @@ export default function SpacetimeCalendarLight() {
 
     if (!meshRef.current) {
       meshRef.current = new VertexMesh(config);
-      rendererRef.current = new CalendarRenderer(canvasRef.current, meshRef.current, colors, weekdaysColors);
+      rendererRef.current = new CalendarRenderer(canvasRef.current, meshRef.current, colors, weekdaysColors, cellColors);
     } else {
       meshRef.current.resize(canvasSize.width, canvasSize.height);
       rendererRef.current.setupCanvas();

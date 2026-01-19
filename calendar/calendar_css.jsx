@@ -512,7 +512,7 @@ export default function SpacetimeCalendar() {
           border-radius: 0;
           border-top: 1px solid var(--grid-line);
           position: relative;
-          overflow: hidden;
+          min-height: 500px;
         }
         
         /* ========================================

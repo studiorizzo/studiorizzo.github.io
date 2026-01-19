@@ -114,6 +114,20 @@ const CALENDAR_HEADER_COLORS = {
   },
 };
 
+// Colori giorni settimana (LUN, MAR, MER, ecc.)
+const WEEKDAYS_COLORS = {
+  light: {
+    standard: { background: '#e9eff0', text: '#006877' },
+    medium: { background: '#e3e9eb', text: '#006877' },
+    high: { background: '#dee3e5', text: '#006877' },
+  },
+  dark: {
+    standard: { background: '#1b2122', text: '#83d2e3' },
+    medium: { background: '#23292a', text: '#83d2e3' },
+    high: { background: '#2b3133', text: '#83d2e3' },
+  },
+};
+
 const calculateMass = (events) => {
   if (!events?.length) return 0;
   return events.reduce((total, e) => {
@@ -336,16 +350,18 @@ class VertexMesh {
 // RENDERER - DYNAMIC THEME
 // ============================================
 class CalendarRenderer {
-  constructor(canvas, mesh, colors) {
+  constructor(canvas, mesh, colors, weekdaysColors) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.mesh = mesh;
     this.colors = colors;
+    this.weekdaysColors = weekdaysColors;
     this.setupCanvas();
   }
 
-  setColors(colors) {
+  setColors(colors, weekdaysColors) {
     this.colors = colors;
+    this.weekdaysColors = weekdaysColors;
   }
 
   setupCanvas() {
@@ -396,11 +412,16 @@ class CalendarRenderer {
   drawWeekdays() {
     const ctx = this.ctx;
     const mesh = this.mesh;
-    const { padding, headerHeight } = mesh.config;
-    const c = this.colors;
+    const { padding, headerHeight, canvasWidth } = mesh.config;
+    const wc = this.weekdaysColors;
 
+    // Sfondo barra giorni settimana
+    ctx.fillStyle = wc.background;
+    ctx.fillRect(0, padding, canvasWidth, headerHeight);
+
+    // Testo giorni settimana
     ctx.font = "600 12px 'Orbitron', sans-serif";
-    ctx.fillStyle = c.onSurfaceVariant;
+    ctx.fillStyle = wc.text;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -560,6 +581,10 @@ export default function SpacetimeCalendarLight() {
     return CALENDAR_HEADER_COLORS[mode][contrast];
   }, [mode, contrast]);
 
+  const weekdaysColors = useMemo(() => {
+    return WEEKDAYS_COLORS[mode][contrast];
+  }, [mode, contrast]);
+
   const canvasWrapperRef = useRef(null);
   const canvasRef = useRef(null);
   const meshRef = useRef(null);
@@ -585,9 +610,9 @@ export default function SpacetimeCalendarLight() {
   // Aggiorna colori nel renderer quando cambiano
   useEffect(() => {
     if (rendererRef.current) {
-      rendererRef.current.setColors(colors);
+      rendererRef.current.setColors(colors, weekdaysColors);
     }
-  }, [colors]);
+  }, [colors, weekdaysColors]);
 
   const calendarDays = useMemo(() => {
     const year = currentDate.getFullYear();
@@ -699,7 +724,7 @@ export default function SpacetimeCalendarLight() {
 
     if (!meshRef.current) {
       meshRef.current = new VertexMesh(config);
-      rendererRef.current = new CalendarRenderer(canvasRef.current, meshRef.current, colors);
+      rendererRef.current = new CalendarRenderer(canvasRef.current, meshRef.current, colors, weekdaysColors);
     } else {
       meshRef.current.resize(canvasSize.width, canvasSize.height);
       rendererRef.current.setupCanvas();
@@ -721,7 +746,7 @@ export default function SpacetimeCalendarLight() {
         rafRef.current = null;
       }
     };
-  }, [canvasSize, colors]);
+  }, [canvasSize, colors, weekdaysColors]);
 
   const handleMouseMove = useCallback((e) => {
     if (!meshRef.current || !canvasRef.current) return;

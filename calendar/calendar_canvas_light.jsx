@@ -109,8 +109,8 @@ const CALENDAR_HEADER_COLORS = {
   },
   dark: {
     standard: { background: '#3d4665', text: '#dbe1ff' },
-    medium: { background: '#636c8d', text: '#ffffff' },
-    high: { background: '#3f4867', text: '#ffffff' },
+    medium: { background: '#878fb3', text: '#000000' },
+    high: { background: '#b8c1e7', text: '#010926' },
   },
 };
 

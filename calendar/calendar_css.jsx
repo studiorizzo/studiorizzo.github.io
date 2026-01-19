@@ -292,6 +292,10 @@ export default function SpacetimeCalendar() {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
   const handleCellClick = (day) => {
     const clickedDate = calendarDays.find(d => d.day === day && d.isCurrentMonth)?.date;
     if (clickedDate) {
@@ -384,77 +388,61 @@ export default function SpacetimeCalendar() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 2rem;
-          padding-bottom: 1.5rem;
+          padding: 1rem 1.5rem;
           border-bottom: 1px solid var(--grid-line);
-        }
-        
-        .header-left {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-        
-        .calendar-title {
-          font-family: 'Orbitron', sans-serif;
-          font-size: 2rem;
-          font-weight: 700;
-          letter-spacing: 0.1em;
-          background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-glow) 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          text-transform: uppercase;
-        }
-        
-        .calendar-version {
-          font-family: 'Orbitron', sans-serif;
-          font-size: 0.65rem;
-          color: var(--accent-gravity);
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          opacity: 0.8;
-        }
-        
-        .calendar-subtitle {
-          font-size: 0.7rem;
-          color: var(--text-muted);
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
         }
         
         .nav-controls {
           display: flex;
           align-items: center;
-          gap: 1rem;
+          gap: 0.5rem;
         }
-        
+
         .nav-btn {
           background: var(--bg-surface);
           border: 1px solid var(--cell-border);
           color: var(--text-primary);
-          padding: 0.75rem 1.25rem;
-          font-family: 'Orbitron', sans-serif;
-          font-size: 0.8rem;
+          padding: 0.5rem 0.75rem;
           cursor: pointer;
           transition: all 0.3s ease;
           border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
-        
+
+        .nav-btn svg {
+          width: 16px;
+          height: 16px;
+        }
+
         .nav-btn:hover {
           background: var(--accent-gravity);
           border-color: var(--accent-glow);
           box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
         }
-        
+
+        .today-btn {
+          background: var(--bg-surface);
+          border: 1px solid var(--cell-border);
+          color: var(--text-primary);
+          padding: 0.5rem 1rem;
+          font-size: 0.85rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          border-radius: 4px;
+          margin-right: 0.5rem;
+        }
+
+        .today-btn:hover {
+          background: var(--accent-gravity);
+          border-color: var(--accent-glow);
+        }
+
         .current-month {
-          font-family: 'Orbitron', sans-serif;
           font-size: 1.1rem;
           font-weight: 500;
-          min-width: 200px;
-          text-align: center;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
+          text-transform: capitalize;
         }
         
         /* Stats */
@@ -1041,12 +1029,17 @@ export default function SpacetimeCalendar() {
         <div className="calendar-container">
           {/* Header */}
           <header className="calendar-header">
+            <span className="current-month">
+              {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+            </span>
             <nav className="nav-controls">
-              <button className="nav-btn" onClick={handlePrevMonth}>← Prec</button>
-              <span className="current-month">
-                {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
-              </span>
-              <button className="nav-btn" onClick={handleNextMonth}>Succ →</button>
+              <button className="today-btn" onClick={handleToday}>Oggi</button>
+              <button className="nav-btn" onClick={handlePrevMonth}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
+              </button>
+              <button className="nav-btn" onClick={handleNextMonth}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
+              </button>
             </nav>
           </header>
           

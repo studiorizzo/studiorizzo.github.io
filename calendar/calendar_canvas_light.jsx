@@ -498,8 +498,6 @@ class CalendarRenderer {
       ctx.fillStyle = c.surfaceContainer;
     } else if (hasEvents) {
       ctx.fillStyle = color + (isHovered ? '25' : '15');
-    } else if (day.isToday) {
-      ctx.fillStyle = c.primary + (isHovered ? '25' : '15');
     } else {
       ctx.fillStyle = isHovered ? c.surfaceContainerHigh : c.surface;
     }
@@ -507,10 +505,6 @@ class CalendarRenderer {
 
     if (hasEvents) {
       ctx.strokeStyle = color + (isHovered ? 'cc' : '88');
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    } else if (day.isToday) {
-      ctx.strokeStyle = c.primary + '80';
       ctx.lineWidth = 2;
       ctx.stroke();
     } else if (isHovered && day.isCurrentMonth) {
@@ -534,7 +528,7 @@ class CalendarRenderer {
     if (!day.isCurrentMonth) ctx.globalAlpha = 0.3;
 
     ctx.font = `${day.isToday ? 'bold ' : ''}${Math.round(14 * scale)}px 'Orbitron', sans-serif`;
-    ctx.fillStyle = day.isToday ? c.primary : (hasEvents ? c.onSurface : c.onSurfaceVariant);
+    ctx.fillStyle = hasEvents ? c.onSurface : c.onSurfaceVariant;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 

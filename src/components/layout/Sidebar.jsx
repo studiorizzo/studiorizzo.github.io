@@ -30,16 +30,6 @@ function Sidebar({ isOpen, onClose }) {
           </NavLink>
         </div>
 
-        {/* Calendario CSS */}
-        <div className={styles.section}>
-          <NavLink to="/calendario-css" className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}>
-            <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
-              <path d="M1.5 1.75C1.5.784 2.284 0 3.25 0h9.5C13.716 0 14.5.784 14.5 1.75v12.5A1.75 1.75 0 0 1 12.75 16h-9.5A1.75 1.75 0 0 1 1.5 14.25V1.75ZM3.25 1.5a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-9.5ZM8 4a.75.75 0 0 1 .75.75v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5A.75.75 0 0 1 8 4Z"></path>
-            </svg>
-            <span>Calendario CSS</span>
-          </NavLink>
-        </div>
-
         {/* Calendario Canvas */}
         <div className={styles.section}>
           <NavLink to="/calendario-canvas" className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}>
@@ -47,6 +37,26 @@ function Sidebar({ isOpen, onClose }) {
               <path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25ZM6.5 6.5v8h7.75a.25.25 0 0 0 .25-.25V6.5Zm8-1.5V1.75a.25.25 0 0 0-.25-.25H6.5V5ZM5 5V1.5H1.75a.25.25 0 0 0-.25.25V5Zm-3.5 1.5v7.75c0 .138.112.25.25.25H5v-8Z"></path>
             </svg>
             <span>Calendario Canvas</span>
+          </NavLink>
+        </div>
+
+        {/* Calendario Canvas chiaro */}
+        <div className={styles.section}>
+          <NavLink to="/calendario-canvas-light" className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}>
+            <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
+              <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 1.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Zm5.657-9.157a.75.75 0 0 0-1.06-1.06l-.354.353a.75.75 0 0 0 1.061 1.06l.353-.353Zm-9.193 9.193a.75.75 0 0 0-1.06-1.06l-.354.353a.75.75 0 0 0 1.06 1.06l.354-.353ZM8 0a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-1.5 0v-.5A.75.75 0 0 1 8 0ZM3 8a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1 0-1.5h.5A.75.75 0 0 1 3 8Zm-.464-4.464a.75.75 0 0 0 1.06-1.06l-.353-.354a.75.75 0 0 0-1.06 1.06l.353.354Zm9.193 9.193a.75.75 0 0 0 1.06-1.06l-.353-.354a.75.75 0 0 0-1.06 1.06l.353.354ZM8 14a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-1.5 0v-.5A.75.75 0 0 1 8 14Zm5-6a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 13 8Z"></path>
+            </svg>
+            <span>Calendario Canvas chiaro</span>
+          </NavLink>
+        </div>
+
+        {/* Calendario CSS */}
+        <div className={styles.section}>
+          <NavLink to="/calendario-css" className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}>
+            <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
+              <path d="M1.5 1.75C1.5.784 2.284 0 3.25 0h9.5C13.716 0 14.5.784 14.5 1.75v12.5A1.75 1.75 0 0 1 12.75 16h-9.5A1.75 1.75 0 0 1 1.5 14.25V1.75ZM3.25 1.5a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-9.5ZM8 4a.75.75 0 0 1 .75.75v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5A.75.75 0 0 1 8 4Z"></path>
+            </svg>
+            <span>Calendario CSS</span>
           </NavLink>
         </div>
 

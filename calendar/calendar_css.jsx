@@ -332,14 +332,16 @@ export default function SpacetimeCalendar() {
           --accent-intense: #a5b4fc;
           --grid-line: rgba(99, 102, 241, 0.08);
           --cell-border: rgba(136, 136, 160, 0.06);
-          
+
           font-family: 'Exo 2', sans-serif;
           background: var(--bg-void);
-          min-height: 100vh;
-          padding: 2rem;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
           color: var(--text-primary);
           position: relative;
           overflow: hidden;
+          border: 1px solid #d0d7de;
         }
         
         /* Sfondo cosmico */
@@ -377,10 +379,12 @@ export default function SpacetimeCalendar() {
         }
         
         .calendar-container {
-          max-width: 1200px;
-          margin: 0 auto;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
           position: relative;
           z-index: 1;
+          overflow: hidden;
         }
         
         /* Header */
@@ -498,14 +502,17 @@ export default function SpacetimeCalendar() {
         
         /* Grid del calendario */
         .calendar-grid {
+          flex: 1;
           display: grid;
           grid-template-columns: repeat(7, 1fr);
+          grid-template-rows: repeat(6, 1fr);
           gap: 8px;
-          padding: 30px;
+          padding: 16px;
           background: var(--bg-deep);
-          border-radius: 16px;
-          border: 1px solid var(--grid-line);
+          border-radius: 0;
+          border-top: 1px solid var(--grid-line);
           position: relative;
+          overflow: hidden;
         }
         
         /* ========================================
@@ -515,11 +522,12 @@ export default function SpacetimeCalendar() {
         
         .spacetime-cell {
           background: var(--bg-cell);
-          min-height: 100px;
+          min-height: 0;
           position: relative;
           cursor: pointer;
           border-radius: 6px;
           border: 1px solid var(--cell-border);
+          overflow: hidden;
           
           /* v1.2: Transizione fluida */
           transition: 
@@ -990,35 +998,33 @@ export default function SpacetimeCalendar() {
         
         /* Responsive */
         @media (max-width: 768px) {
-          .spacetime-calendar {
-            padding: 1rem;
-          }
-          
-          .calendar-title {
-            font-size: 1.25rem;
-          }
-          
           .calendar-header {
             flex-direction: column;
-            gap: 1rem;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
           }
-          
-          .spacetime-cell {
-            min-height: 80px;
+
+          .calendar-grid {
+            gap: 4px;
+            padding: 8px;
           }
-          
+
           .cell-content {
             padding: 0.25rem;
           }
-          
+
+          .day-number {
+            font-size: 0.7rem;
+          }
+
           .event-marker {
             padding: 2px 4px;
           }
-          
+
           .event-amount {
             display: none;
           }
-          
+
           .type-selector {
             grid-template-columns: repeat(2, 1fr);
           }

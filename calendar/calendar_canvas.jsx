@@ -1,14 +1,11 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 
-const CONFIG = {
+const BASE_CONFIG = {
   cols: 7,
   rows: 6,
-  canvasWidth: 980,
-  canvasHeight: 680,
-  padding: 30,
-  headerHeight: 35,
-  
-  emptyMassMultiplier: 0.9, // Moltiplicatore per massa celle vuote
+  padding: 20,
+  headerHeight: 30,
+  emptyMassMultiplier: 0.9,
   animationSpeed: 0.1,
 };
 
@@ -39,22 +36,35 @@ class VertexMesh {
     this.config = config;
     this.cols = config.cols;
     this.rows = config.rows;
-    
-    this.gridLeft = config.padding;
-    this.gridTop = config.padding + config.headerHeight;
-    this.totalWidth = config.canvasWidth - config.padding * 2;
-    this.totalHeight = config.canvasHeight - config.padding * 2 - config.headerHeight;
-    this.baseCellWidth = this.totalWidth / this.cols;
-    this.baseCellHeight = this.totalHeight / this.rows;
-    
     this.vertexCols = config.cols + 1;
     this.vertexRows = config.rows + 1;
-    
+    this.vertices = [];
+    this.targetVertices = [];
+    this.masses = new Array(config.cols * config.rows).fill(0);
+    this.updateDimensions(config.canvasWidth, config.canvasHeight);
+    this.initVertices();
+  }
+
+  updateDimensions(width, height) {
+    this.config.canvasWidth = width;
+    this.config.canvasHeight = height;
+    this.gridLeft = this.config.padding;
+    this.gridTop = this.config.padding + this.config.headerHeight;
+    this.totalWidth = width - this.config.padding * 2;
+    this.totalHeight = height - this.config.padding * 2 - this.config.headerHeight;
+    this.baseCellWidth = this.totalWidth / this.cols;
+    this.baseCellHeight = this.totalHeight / this.rows;
+  }
+
+  resize(width, height) {
+    this.updateDimensions(width, height);
+    // Reinizializza vertici con nuove dimensioni
     this.vertices = [];
     this.targetVertices = [];
     this.initVertices();
-    
-    this.masses = new Array(config.cols * config.rows).fill(0);
+    if (this.masses.some(m => m > 0)) {
+      this.calculateTargetPositions();
+    }
   }
   
   initVertices() {
@@ -457,18 +467,20 @@ class CalendarRenderer {
 // MAIN COMPONENT
 // ============================================
 export default function SpacetimeCalendar() {
+  const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const meshRef = useRef(null);
   const rendererRef = useRef(null);
   const rafRef = useRef(null);
-  
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+
   // REF per dati dinamici
   const dataRef = useRef({
     calendarDays: [],
     eventsByDate: {},
     hoveredCell: -1,
   });
-  
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [hoveredCell, setHoveredCell] = useState(-1);
@@ -543,7 +555,7 @@ export default function SpacetimeCalendar() {
     const totalAmount = monthEvents.reduce((sum, e) => sum + e.amount, 0);
     const avgAmount = totalAmount / monthEvents.length;
     
-    return Math.log10(avgAmount + 1) * CONFIG.emptyMassMultiplier * 100;
+    return Math.log10(avgAmount + 1) * BASE_CONFIG.emptyMassMultiplier * 100;
   }, [events, currentDate]);
   
   const masses = useMemo(() => {
@@ -566,23 +578,54 @@ export default function SpacetimeCalendar() {
     }
   }, [masses, emptyMass]);
   
+  // Resize observer
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        const { width, height } = entry.contentRect;
+        const canvasHeight = Math.max(height - 50, 400); // 50px per header
+        setCanvasSize({ width, height: canvasHeight });
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
   // Init e animation loop
   useEffect(() => {
-    if (!canvasRef.current) return;
-    
-    meshRef.current = new VertexMesh(CONFIG);
-    rendererRef.current = new CalendarRenderer(canvasRef.current, meshRef.current);
-    
-    const animate = () => {
-      meshRef.current.update();
-      const { calendarDays, eventsByDate, hoveredCell } = dataRef.current;
-      rendererRef.current.render(calendarDays, eventsByDate, hoveredCell, true);
-      rafRef.current = requestAnimationFrame(animate);
+    if (!canvasRef.current || canvasSize.width === 0) return;
+
+    const config = { ...BASE_CONFIG, canvasWidth: canvasSize.width, canvasHeight: canvasSize.height };
+
+    if (!meshRef.current) {
+      meshRef.current = new VertexMesh(config);
+      rendererRef.current = new CalendarRenderer(canvasRef.current, meshRef.current);
+    } else {
+      meshRef.current.resize(canvasSize.width, canvasSize.height);
+      rendererRef.current.setupCanvas();
+    }
+
+    if (!rafRef.current) {
+      const animate = () => {
+        meshRef.current.update();
+        const { calendarDays, eventsByDate, hoveredCell } = dataRef.current;
+        rendererRef.current.render(calendarDays, eventsByDate, hoveredCell, true);
+        rafRef.current = requestAnimationFrame(animate);
+      };
+      animate();
+    }
+
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
-    animate();
-    
-    return () => cancelAnimationFrame(rafRef.current);
-  }, []);
+  }, [canvasSize]);
   
   const handleMouseMove = useCallback((e) => {
     if (!meshRef.current || !canvasRef.current) return;
@@ -616,36 +659,46 @@ export default function SpacetimeCalendar() {
   };
 
   return (
-    <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", background: '#030306', minHeight: '100vh', padding: 16, color: '#e8e8f0' }}>
-      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-        {/* Canvas con header interno */}
-        <div style={{ background: '#0a0a12', borderRadius: 10, border: '1px solid rgba(99,102,241,0.15)', overflow: 'hidden' }}>
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(99,102,241,0.1)' }}>
-            <span style={{ fontSize: '1.1rem', fontWeight: 500, textTransform: 'capitalize' }}>
-              {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
-            </span>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <button onClick={handleToday}
-                style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontSize: 13 }}>Oggi</button>
-              <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
-                style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
-              </button>
-              <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
-                style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
-              </button>
-            </div>
-          </div>
-          <canvas
-            ref={canvasRef}
-            onMouseMove={handleMouseMove}
-            onClick={handleClick}
-            onMouseLeave={() => setHoveredCell(-1)}
-            style={{ display: 'block', cursor: 'pointer' }}
-          />
+    <div
+      ref={containerRef}
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        background: '#0a0a12',
+        border: '1px solid #d0d7de',
+        overflow: 'hidden',
+        color: '#e8e8f0',
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(99,102,241,0.1)', background: '#0a0a12' }}>
+        <span style={{ fontSize: '1.1rem', fontWeight: 500, textTransform: 'capitalize' }}>
+          {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+        </span>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button onClick={handleToday}
+            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontSize: 13 }}>Oggi</button>
+          <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
+            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
+          </button>
+          <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
+            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
+          </button>
         </div>
+      </div>
+      {/* Canvas */}
+      <div style={{ flex: 1, background: '#0a0a12' }}>
+        <canvas
+          ref={canvasRef}
+          onMouseMove={handleMouseMove}
+          onClick={handleClick}
+          onMouseLeave={() => setHoveredCell(-1)}
+          style={{ display: 'block', cursor: 'pointer' }}
+        />
       </div>
       
       {/* Modal */}

@@ -611,23 +611,33 @@ export default function SpacetimeCalendar() {
     }
   };
   
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
   return (
     <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", background: '#030306', minHeight: '100vh', padding: 16, color: '#e8e8f0' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-        
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 12, gap: 12 }}>
-          <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
-            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 12px', borderRadius: 4, cursor: 'pointer' }}>←</button>
-          <span style={{ minWidth: 160, textAlign: 'center', textTransform: 'capitalize' }}>
-            {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
-          </span>
-          <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
-            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 12px', borderRadius: 4, cursor: 'pointer' }}>→</button>
-        </div>
-        
-        {/* Canvas */}
+        {/* Canvas con header interno */}
         <div style={{ background: '#0a0a12', borderRadius: 10, border: '1px solid rgba(99,102,241,0.15)', overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(99,102,241,0.1)' }}>
+            <span style={{ fontSize: '1.1rem', fontWeight: 500, textTransform: 'capitalize' }}>
+              {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+            </span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button onClick={handleToday}
+                style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontSize: 13 }}>Oggi</button>
+              <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
+                style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
+              </button>
+              <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
+                style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
+              </button>
+            </div>
+          </div>
           <canvas
             ref={canvasRef}
             onMouseMove={handleMouseMove}

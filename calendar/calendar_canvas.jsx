@@ -692,8 +692,8 @@ export default function SpacetimeCalendar() {
           </button>
         </div>
       </div>
-      {/* Canvas wrapper */}
-      <div ref={canvasWrapperRef} style={{ flex: 1, minHeight: 0, background: '#0a0a12', overflow: 'hidden' }}>
+      {/* Canvas wrapper - minHeight 500px come Scadenze (6 righe × ~83px) */}
+      <div ref={canvasWrapperRef} style={{ flex: 1, minHeight: 500, background: '#0a0a12' }}>
         <canvas
           ref={canvasRef}
           onMouseMove={handleMouseMove}

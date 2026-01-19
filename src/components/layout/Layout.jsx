@@ -17,7 +17,7 @@ function Layout({ children }) {
   const { mode } = useTheme()
 
   // Applica sfondo tematizzato solo su calendario-canvas-light
-  const isCanvasLight = location.pathname === '/calendario-canvas-light'
+  const isCanvasLight = location.pathname.includes('calendario-canvas-light')
   const backgroundColor = isCanvasLight ? PAGE_COLORS[mode] : '#ffffff'
 
   return (

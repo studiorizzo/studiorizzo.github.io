@@ -440,7 +440,8 @@ class CalendarRenderer {
     ctx.strokeStyle = c.outlineVariant;
     ctx.lineWidth = 1;
 
-    for (let row = 0; row <= mesh.rows; row++) {
+    // Horizontal lines - skip row 0 (border under weekdays) and last row (bottom border)
+    for (let row = 1; row < mesh.rows; row++) {
       ctx.beginPath();
       for (let col = 0; col <= mesh.cols; col++) {
         const v = mesh.getVertex(row, col);
@@ -450,7 +451,8 @@ class CalendarRenderer {
       ctx.stroke();
     }
 
-    for (let col = 0; col <= mesh.cols; col++) {
+    // Vertical lines - skip col 0 (left border) and last col (right border)
+    for (let col = 1; col < mesh.cols; col++) {
       ctx.beginPath();
       for (let row = 0; row <= mesh.rows; row++) {
         const v = mesh.getVertex(row, col);

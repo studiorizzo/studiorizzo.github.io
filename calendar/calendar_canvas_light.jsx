@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useTheme } from '../src/context/ThemeContext';
 
 const BASE_CONFIG = {
   cols: 7,
@@ -18,6 +19,86 @@ const PAYMENT_TYPES = {
 };
 
 const WEEKDAYS = ['LUN', 'MAR', 'MER', 'GIO', 'VEN', 'SAB', 'DOM'];
+
+// Colori MD3 per tema e contrasto
+const MD3_COLORS = {
+  light: {
+    standard: {
+      background: '#F5FAFC',
+      surface: '#F5FAFC',
+      surfaceContainer: '#E9EFF0',
+      surfaceContainerHigh: '#E3E9EB',
+      onSurface: '#171D1E',
+      onSurfaceVariant: '#3F484A',
+      outline: '#6F797B',
+      outlineVariant: '#BFC8CB',
+      primary: '#006877',
+      onPrimary: '#FFFFFF',
+    },
+    medium: {
+      background: '#F5FAFC',
+      surface: '#F5FAFC',
+      surfaceContainer: '#E9EFF0',
+      surfaceContainerHigh: '#E3E9EB',
+      onSurface: '#0C1213',
+      onSurfaceVariant: '#2B3436',
+      outline: '#4B5456',
+      outlineVariant: '#7B8486',
+      primary: '#003C45',
+      onPrimary: '#FFFFFF',
+    },
+    high: {
+      background: '#F5FAFC',
+      surface: '#F5FAFC',
+      surfaceContainer: '#E9EFF0',
+      surfaceContainerHigh: '#E3E9EB',
+      onSurface: '#000000',
+      onSurfaceVariant: '#000000',
+      outline: '#252E30',
+      outlineVariant: '#252E30',
+      primary: '#003139',
+      onPrimary: '#FFFFFF',
+    },
+  },
+  dark: {
+    standard: {
+      background: '#0E1416',
+      surface: '#0E1416',
+      surfaceContainer: '#1B2122',
+      surfaceContainerHigh: '#252B2C',
+      onSurface: '#DEE3E5',
+      onSurfaceVariant: '#BFC8CB',
+      outline: '#899295',
+      outlineVariant: '#3F484A',
+      primary: '#83D2E3',
+      onPrimary: '#00363E',
+    },
+    medium: {
+      background: '#0E1416',
+      surface: '#0E1416',
+      surfaceContainer: '#1B2122',
+      surfaceContainerHigh: '#252B2C',
+      onSurface: '#F2F7F9',
+      onSurfaceVariant: '#C3CCD0',
+      outline: '#C3CCD0',
+      outlineVariant: '#5B6467',
+      primary: '#87D6E7',
+      onPrimary: '#003139',
+    },
+    high: {
+      background: '#0E1416',
+      surface: '#0E1416',
+      surfaceContainer: '#1B2122',
+      surfaceContainerHigh: '#252B2C',
+      onSurface: '#FFFFFF',
+      onSurfaceVariant: '#FFFFFF',
+      outline: '#E8F2F4',
+      outlineVariant: '#BBC4C7',
+      primary: '#D2F6FF',
+      onPrimary: '#000000',
+    },
+  },
+};
 
 const calculateMass = (events) => {
   if (!events?.length) return 0;
@@ -238,14 +319,19 @@ class VertexMesh {
 }
 
 // ============================================
-// RENDERER - LIGHT THEME
+// RENDERER - DYNAMIC THEME
 // ============================================
 class CalendarRenderer {
-  constructor(canvas, mesh) {
+  constructor(canvas, mesh, colors) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.mesh = mesh;
+    this.colors = colors;
     this.setupCanvas();
+  }
+
+  setColors(colors) {
+    this.colors = colors;
   }
 
   setupCanvas() {
@@ -262,14 +348,15 @@ class CalendarRenderer {
   render(calendarDays, eventsByDate, hoveredCell, showGrid) {
     const ctx = this.ctx;
     const { canvasWidth, canvasHeight } = this.mesh.config;
+    const c = this.colors;
 
-    // Sfondo chiaro
-    ctx.fillStyle = '#ffffff';
+    // Sfondo
+    ctx.fillStyle = c.background;
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
     this.drawWeekdays();
 
-    // Ombre per celle con eventi (invece di glow)
+    // Ombre/glow per celle con eventi
     calendarDays.forEach((day, i) => {
       const events = eventsByDate[day.date?.toDateString()] || [];
       const mass = calculateMass(events);
@@ -296,9 +383,10 @@ class CalendarRenderer {
     const ctx = this.ctx;
     const mesh = this.mesh;
     const { padding, headerHeight } = mesh.config;
+    const c = this.colors;
 
     ctx.font = "600 12px 'Orbitron', sans-serif";
-    ctx.fillStyle = '#6b7280';
+    ctx.fillStyle = c.onSurfaceVariant;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -312,8 +400,9 @@ class CalendarRenderer {
   drawMeshLines() {
     const ctx = this.ctx;
     const mesh = this.mesh;
+    const c = this.colors;
 
-    ctx.strokeStyle = '#e5e7eb';
+    ctx.strokeStyle = c.outlineVariant;
     ctx.lineWidth = 1;
 
     for (let row = 0; row <= mesh.rows; row++) {
@@ -340,12 +429,11 @@ class CalendarRenderer {
   drawCellShadow(index, events, mass) {
     const ctx = this.ctx;
     const center = this.mesh.getCellCenter(index);
-    const color = events[0] ? PAYMENT_TYPES[events[0].type]?.color : '#6366f1';
+    const color = events[0] ? PAYMENT_TYPES[events[0].type]?.color : this.colors.primary;
     const radius = 40 + Math.min(mass / 500, 1) * 30;
 
-    // Ombra soft invece di glow
     const gradient = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, radius);
-    gradient.addColorStop(0, color + '20');
+    gradient.addColorStop(0, color + '25');
     gradient.addColorStop(0.5, color + '10');
     gradient.addColorStop(1, 'transparent');
 
@@ -360,6 +448,7 @@ class CalendarRenderer {
     const v = this.mesh.getCellVertices(index);
     const hasEvents = events.length > 0 && day.isCurrentMonth;
     const color = hasEvents ? PAYMENT_TYPES[events[0].type]?.color : null;
+    const c = this.colors;
 
     ctx.beginPath();
     ctx.moveTo(v.topLeft.x, v.topLeft.y);
@@ -369,13 +458,13 @@ class CalendarRenderer {
     ctx.closePath();
 
     if (!day.isCurrentMonth) {
-      ctx.fillStyle = '#f9fafb';
+      ctx.fillStyle = c.surfaceContainer;
     } else if (hasEvents) {
       ctx.fillStyle = color + (isHovered ? '25' : '15');
     } else if (day.isToday) {
-      ctx.fillStyle = isHovered ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.08)';
+      ctx.fillStyle = c.primary + (isHovered ? '25' : '15');
     } else {
-      ctx.fillStyle = isHovered ? '#f3f4f6' : '#ffffff';
+      ctx.fillStyle = isHovered ? c.surfaceContainerHigh : c.surface;
     }
     ctx.fill();
 
@@ -384,11 +473,11 @@ class CalendarRenderer {
       ctx.lineWidth = 2;
       ctx.stroke();
     } else if (day.isToday) {
-      ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
+      ctx.strokeStyle = c.primary + '80';
       ctx.lineWidth = 2;
       ctx.stroke();
     } else if (isHovered && day.isCurrentMonth) {
-      ctx.strokeStyle = '#d1d5db';
+      ctx.strokeStyle = c.outline;
       ctx.lineWidth = 1;
       ctx.stroke();
     }
@@ -399,6 +488,7 @@ class CalendarRenderer {
     const center = this.mesh.getCellCenter(index);
     const v = this.mesh.getCellVertices(index);
     const hasEvents = events.length > 0 && day.isCurrentMonth;
+    const c = this.colors;
 
     const cellWidth = Math.abs(v.topRight.x - v.topLeft.x);
     const cellHeight = Math.abs(v.bottomLeft.y - v.topLeft.y);
@@ -407,7 +497,7 @@ class CalendarRenderer {
     if (!day.isCurrentMonth) ctx.globalAlpha = 0.3;
 
     ctx.font = `${day.isToday ? 'bold ' : ''}${Math.round(14 * scale)}px 'Orbitron', sans-serif`;
-    ctx.fillStyle = day.isToday ? '#4f46e5' : (hasEvents ? '#111827' : '#6b7280');
+    ctx.fillStyle = day.isToday ? c.primary : (hasEvents ? c.onSurface : c.onSurfaceVariant);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -420,7 +510,7 @@ class CalendarRenderer {
       const startY = center.y + 5 * scale;
 
       events.slice(0, maxEvents).forEach((event, i) => {
-        const evColor = PAYMENT_TYPES[event.type]?.color || '#6366f1';
+        const evColor = PAYMENT_TYPES[event.type]?.color || c.primary;
         const icon = PAYMENT_TYPES[event.type]?.icon || '•';
         const amount = event.amount >= 1000
           ? `€${(event.amount/1000).toFixed(0)}k`
@@ -433,7 +523,7 @@ class CalendarRenderer {
 
       if (events.length > 2) {
         ctx.font = `${Math.round(12 * scale)}px 'Orbitron', sans-serif`;
-        ctx.fillStyle = '#9ca3af';
+        ctx.fillStyle = c.onSurfaceVariant;
         ctx.fillText(`+${events.length - 2}`, center.x, startY + 2 * spacing);
       }
     }
@@ -446,6 +536,12 @@ class CalendarRenderer {
 // MAIN COMPONENT
 // ============================================
 export default function SpacetimeCalendarLight() {
+  const { mode, contrast } = useTheme();
+
+  const colors = useMemo(() => {
+    return MD3_COLORS[mode][contrast];
+  }, [mode, contrast]);
+
   const canvasWrapperRef = useRef(null);
   const canvasRef = useRef(null);
   const meshRef = useRef(null);
@@ -467,6 +563,13 @@ export default function SpacetimeCalendarLight() {
   const [modalDate, setModalDate] = useState(null);
   const [modalType, setModalType] = useState('altro');
   const [modalAmount, setModalAmount] = useState('');
+
+  // Aggiorna colori nel renderer quando cambiano
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setColors(colors);
+    }
+  }, [colors]);
 
   const calendarDays = useMemo(() => {
     const year = currentDate.getFullYear();
@@ -578,7 +681,7 @@ export default function SpacetimeCalendarLight() {
 
     if (!meshRef.current) {
       meshRef.current = new VertexMesh(config);
-      rendererRef.current = new CalendarRenderer(canvasRef.current, meshRef.current);
+      rendererRef.current = new CalendarRenderer(canvasRef.current, meshRef.current, colors);
     } else {
       meshRef.current.resize(canvasSize.width, canvasSize.height);
       rendererRef.current.setupCanvas();
@@ -600,7 +703,7 @@ export default function SpacetimeCalendarLight() {
         rafRef.current = null;
       }
     };
-  }, [canvasSize]);
+  }, [canvasSize, colors]);
 
   const handleMouseMove = useCallback((e) => {
     if (!meshRef.current || !canvasRef.current) return;
@@ -637,31 +740,39 @@ export default function SpacetimeCalendarLight() {
     <div
       style={{
         fontFamily: "'Exo 2', sans-serif",
-        background: '#ffffff',
-        border: '1px solid #d0d7de',
-        color: '#111827',
+        background: colors.background,
+        border: `1px solid ${colors.outlineVariant}`,
+        color: colors.onSurface,
       }}
     >
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #e5e7eb', background: '#fff', flexShrink: 0 }}>
-        <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '18px', fontWeight: 500, textTransform: 'capitalize', color: '#111827' }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '12px 16px',
+        borderBottom: `1px solid ${colors.outlineVariant}`,
+        background: colors.surface,
+        flexShrink: 0
+      }}>
+        <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '18px', fontWeight: 500, textTransform: 'capitalize', color: colors.onSurface }}>
           {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button onClick={handleToday}
-            style={{ fontFamily: "'Orbitron', sans-serif", background: '#fff', border: '1px solid #e5e7eb', color: '#374151', padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontSize: '14px' }}>Oggi</button>
+            style={{ fontFamily: "'Orbitron', sans-serif", background: colors.surface, border: `1px solid ${colors.outlineVariant}`, color: colors.onSurface, padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontSize: '14px' }}>Oggi</button>
           <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
-            style={{ background: '#fff', border: '1px solid #e5e7eb', color: '#374151', padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
+            style={{ background: colors.surface, border: `1px solid ${colors.outlineVariant}`, color: colors.onSurface, padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
           </button>
           <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
-            style={{ background: '#fff', border: '1px solid #e5e7eb', color: '#374151', padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
+            style={{ background: colors.surface, border: `1px solid ${colors.outlineVariant}`, color: colors.onSurface, padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
           </button>
         </div>
       </div>
       {/* Canvas wrapper */}
-      <div ref={canvasWrapperRef} style={{ background: '#fff' }}>
+      <div ref={canvasWrapperRef} style={{ background: colors.background }}>
         <canvas
           ref={canvasRef}
           onMouseMove={handleMouseMove}
@@ -671,23 +782,23 @@ export default function SpacetimeCalendarLight() {
         />
       </div>
 
-      {/* Modal - Light theme */}
+      {/* Modal */}
       {modalOpen && modalDate && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           onClick={() => setModalOpen(false)}
         >
           <div
-            style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, width: 360, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
+            style={{ background: colors.surface, border: `1px solid ${colors.outlineVariant}`, borderRadius: 12, padding: 20, width: 360, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
             onClick={e => e.stopPropagation()}
           >
-            <h3 style={{ margin: '0 0 5px', color: '#111827', fontFamily: "'Orbitron', sans-serif" }}>Aggiungi Pagamento</h3>
-            <p style={{ margin: '0 0 15px', color: '#6b7280', fontSize: 14, textTransform: 'capitalize' }}>
+            <h3 style={{ margin: '0 0 5px', color: colors.onSurface, fontFamily: "'Orbitron', sans-serif" }}>Aggiungi Pagamento</h3>
+            <p style={{ margin: '0 0 15px', color: colors.onSurfaceVariant, fontSize: 14, textTransform: 'capitalize' }}>
               {modalDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
 
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: 11, color: '#6b7280', marginBottom: 5, fontFamily: "'Orbitron', sans-serif" }}>TIPO</label>
+              <label style={{ display: 'block', fontSize: 11, color: colors.onSurfaceVariant, marginBottom: 5, fontFamily: "'Orbitron', sans-serif" }}>TIPO</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                 {Object.entries(PAYMENT_TYPES).map(([k, v]) => (
                   <button
@@ -696,10 +807,10 @@ export default function SpacetimeCalendarLight() {
                     onClick={() => setModalType(k)}
                     style={{
                       padding: '8px 4px',
-                      background: modalType === k ? v.color + '15' : '#f9fafb',
-                      border: `1px solid ${modalType === k ? v.color : '#e5e7eb'}`,
+                      background: modalType === k ? v.color + '20' : colors.surfaceContainer,
+                      border: `1px solid ${modalType === k ? v.color : colors.outlineVariant}`,
                       borderRadius: 6,
-                      color: '#374151',
+                      color: colors.onSurface,
                       cursor: 'pointer',
                       fontSize: 10
                     }}
@@ -712,7 +823,7 @@ export default function SpacetimeCalendarLight() {
             </div>
 
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', fontSize: 11, color: '#6b7280', marginBottom: 5, fontFamily: "'Orbitron', sans-serif" }}>IMPORTO €</label>
+              <label style={{ display: 'block', fontSize: 11, color: colors.onSurfaceVariant, marginBottom: 5, fontFamily: "'Orbitron', sans-serif" }}>IMPORTO €</label>
               <input
                 type="number"
                 value={modalAmount}
@@ -722,10 +833,10 @@ export default function SpacetimeCalendarLight() {
                 style={{
                   width: '100%',
                   padding: 10,
-                  background: '#fff',
-                  border: '1px solid #e5e7eb',
+                  background: colors.surface,
+                  border: `1px solid ${colors.outlineVariant}`,
                   borderRadius: 6,
-                  color: '#111827',
+                  color: colors.onSurface,
                   fontSize: 16,
                   boxSizing: 'border-box'
                 }}
@@ -739,10 +850,10 @@ export default function SpacetimeCalendarLight() {
                     style={{
                       flex: 1,
                       padding: 6,
-                      background: '#f9fafb',
-                      border: '1px solid #e5e7eb',
+                      background: colors.surfaceContainer,
+                      border: `1px solid ${colors.outlineVariant}`,
                       borderRadius: 4,
-                      color: '#6b7280',
+                      color: colors.onSurfaceVariant,
                       cursor: 'pointer',
                       fontSize: 11,
                       fontFamily: "'Orbitron', sans-serif"
@@ -761,10 +872,10 @@ export default function SpacetimeCalendarLight() {
                 style={{
                   flex: 1,
                   padding: 12,
-                  background: '#fff',
-                  border: '1px solid #e5e7eb',
+                  background: colors.surface,
+                  border: `1px solid ${colors.outlineVariant}`,
                   borderRadius: 6,
-                  color: '#6b7280',
+                  color: colors.onSurfaceVariant,
                   cursor: 'pointer',
                   fontFamily: "'Orbitron', sans-serif"
                 }}
@@ -777,10 +888,10 @@ export default function SpacetimeCalendarLight() {
                 style={{
                   flex: 1,
                   padding: 12,
-                  background: Number(modalAmount) > 0 ? '#4f46e5' : '#e5e7eb',
+                  background: Number(modalAmount) > 0 ? colors.primary : colors.surfaceContainer,
                   border: 'none',
                   borderRadius: 6,
-                  color: '#fff',
+                  color: Number(modalAmount) > 0 ? colors.onPrimary : colors.onSurfaceVariant,
                   cursor: Number(modalAmount) > 0 ? 'pointer' : 'not-allowed',
                   fontFamily: "'Orbitron', sans-serif"
                 }}

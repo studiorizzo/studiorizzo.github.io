@@ -784,7 +784,6 @@ export default function SpacetimeCalendarLight() {
       style={{
         fontFamily: "'Exo 2', sans-serif",
         background: colors.background,
-        border: `1px solid ${colors.outlineVariant}`,
         color: colors.onSurface,
       }}
     >
@@ -794,7 +793,6 @@ export default function SpacetimeCalendarLight() {
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '12px 16px',
-        borderBottom: `1px solid ${colors.outlineVariant}`,
         background: headerColors.background,
         flexShrink: 0
       }}>

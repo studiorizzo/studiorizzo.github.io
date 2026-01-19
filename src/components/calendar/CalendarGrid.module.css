@@ -13,6 +13,7 @@
 }
 
 .weekday {
+  font-family: 'Orbitron', sans-serif;
   padding: 12px 8px;
   text-align: center;
   font-size: 12px;
@@ -71,6 +72,7 @@
 }
 
 .dayNumber {
+  font-family: 'Orbitron', sans-serif;
   font-size: 14px;
   font-weight: 500;
   color: #111827;
@@ -109,6 +111,7 @@
 }
 
 .scadenzaAmount {
+  font-family: 'Orbitron', sans-serif;
   color: #b45309;
   font-weight: 600;
   margin-left: 8px;

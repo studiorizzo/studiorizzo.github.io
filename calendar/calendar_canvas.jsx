@@ -315,7 +315,7 @@ class CalendarRenderer {
     const mesh = this.mesh;
     const { padding, headerHeight } = mesh.config;
     
-    ctx.font = "600 11px 'Segoe UI', sans-serif";
+    ctx.font = "600 12px 'Orbitron', sans-serif";
     ctx.fillStyle = '#6366f1';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -429,7 +429,7 @@ class CalendarRenderer {
     
     if (!day.isCurrentMonth) ctx.globalAlpha = 0.2;
     
-    ctx.font = `${day.isToday ? 'bold ' : ''}${Math.round(14 * scale)}px 'Segoe UI', sans-serif`;
+    ctx.font = `${day.isToday ? 'bold ' : ''}${Math.round(14 * scale)}px 'Orbitron', sans-serif`;
     ctx.fillStyle = day.isToday ? '#818cf8' : (hasEvents ? '#fff' : '#555');
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -449,13 +449,13 @@ class CalendarRenderer {
           ? `€${(event.amount/1000).toFixed(0)}k` 
           : `€${event.amount}`;
         
-        ctx.font = `${Math.round(10 * scale)}px 'Segoe UI', sans-serif`;
+        ctx.font = `${Math.round(12 * scale)}px 'Orbitron', sans-serif`;
         ctx.fillStyle = evColor;
         ctx.fillText(`${icon} ${amount}`, center.x, startY + i * spacing);
       });
       
       if (events.length > 2) {
-        ctx.font = `${Math.round(9 * scale)}px 'Segoe UI', sans-serif`;
+        ctx.font = `${Math.round(12 * scale)}px 'Orbitron', sans-serif`;
         ctx.fillStyle = '#666';
         ctx.fillText(`+${events.length - 2}`, center.x, startY + 2 * spacing);
       }
@@ -667,7 +667,7 @@ export default function SpacetimeCalendar() {
   return (
     <div
       style={{
-        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        fontFamily: "'Exo 2', sans-serif",
         background: '#0a0a12',
         border: '1px solid #d0d7de',
         color: '#e8e8f0',
@@ -675,12 +675,12 @@ export default function SpacetimeCalendar() {
     >
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(99,102,241,0.1)', background: '#0a0a12', flexShrink: 0 }}>
-        <span style={{ fontSize: '1.1rem', fontWeight: 500, textTransform: 'capitalize' }}>
+        <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '18px', fontWeight: 500, textTransform: 'capitalize' }}>
           {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button onClick={handleToday}
-            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontSize: 13 }}>Oggi</button>
+            style={{ fontFamily: "'Orbitron', sans-serif", background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontSize: '14px' }}>Oggi</button>
           <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
             style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#e8e8f0', padding: '6px 10px', borderRadius: 4, cursor: 'pointer' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>

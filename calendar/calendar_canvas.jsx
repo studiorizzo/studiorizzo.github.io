@@ -268,8 +268,8 @@ class CalendarRenderer {
     const dpr = window.devicePixelRatio || 1;
     this.canvas.width = canvasWidth * dpr;
     this.canvas.height = canvasHeight * dpr;
-    this.canvas.style.width = canvasWidth + 'px';
-    this.canvas.style.height = canvasHeight + 'px';
+    // NON impostare style.width/height - il canvas riempie il wrapper via CSS
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
     this.ctx.scale(dpr, dpr);
   }
   
@@ -467,12 +467,12 @@ class CalendarRenderer {
 // MAIN COMPONENT
 // ============================================
 export default function SpacetimeCalendar() {
-  const containerRef = useRef(null);
+  const canvasWrapperRef = useRef(null);
   const canvasRef = useRef(null);
   const meshRef = useRef(null);
   const rendererRef = useRef(null);
   const rafRef = useRef(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   // REF per dati dinamici
   const dataRef = useRef({
@@ -578,20 +578,21 @@ export default function SpacetimeCalendar() {
     }
   }, [masses, emptyMass]);
   
-  // Resize observer
+  // Resize observer - osserva il wrapper del canvas
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!canvasWrapperRef.current) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
         const { width, height } = entry.contentRect;
-        const canvasHeight = Math.max(height - 50, 400); // 50px per header
-        setCanvasSize({ width, height: canvasHeight });
+        if (width > 0 && height > 0) {
+          setCanvasSize({ width: Math.floor(width), height: Math.floor(height) });
+        }
       }
     });
 
-    resizeObserver.observe(containerRef.current);
+    resizeObserver.observe(canvasWrapperRef.current);
     return () => resizeObserver.disconnect();
   }, []);
 
@@ -660,7 +661,6 @@ export default function SpacetimeCalendar() {
 
   return (
     <div
-      ref={containerRef}
       style={{
         flex: 1,
         display: 'flex',
@@ -673,7 +673,7 @@ export default function SpacetimeCalendar() {
       }}
     >
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(99,102,241,0.1)', background: '#0a0a12' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(99,102,241,0.1)', background: '#0a0a12', flexShrink: 0 }}>
         <span style={{ fontSize: '1.1rem', fontWeight: 500, textTransform: 'capitalize' }}>
           {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
         </span>
@@ -690,14 +690,14 @@ export default function SpacetimeCalendar() {
           </button>
         </div>
       </div>
-      {/* Canvas */}
-      <div style={{ flex: 1, background: '#0a0a12' }}>
+      {/* Canvas wrapper */}
+      <div ref={canvasWrapperRef} style={{ flex: 1, minHeight: 0, background: '#0a0a12', overflow: 'hidden' }}>
         <canvas
           ref={canvasRef}
           onMouseMove={handleMouseMove}
           onClick={handleClick}
           onMouseLeave={() => setHoveredCell(-1)}
-          style={{ display: 'block', cursor: 'pointer' }}
+          style={{ display: 'block', width: '100%', height: '100%', cursor: 'pointer' }}
         />
       </div>
       

@@ -435,9 +435,9 @@ class CalendarRenderer {
   drawMeshLines() {
     const ctx = this.ctx;
     const mesh = this.mesh;
-    const c = this.colors;
+    const wc = this.weekdaysColors;
 
-    ctx.strokeStyle = c.outlineVariant;
+    ctx.strokeStyle = wc.text;
     ctx.lineWidth = 1;
 
     // Horizontal lines - skip row 0 (border under weekdays) and last row (bottom border)

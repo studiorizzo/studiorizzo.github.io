@@ -244,11 +244,11 @@ class AdvancedVertexMesh {
 
   setMasses(masses) {
     const { baseMass } = this.config;
-    // Celle fuori mese: massa 0
-    // Celle del mese corrente: baseMass + eventMass
+    // TUTTE le celle hanno baseMass (per evitare distorsioni)
+    // Solo le celle con eventi hanno massa extra
     this.masses = masses.map(m => {
-      if (m < 0) return 0; // Fuori mese
-      return baseMass + m; // baseMass + eventuale massa eventi
+      if (m < 0) return baseMass; // Fuori mese: stessa massa base
+      return baseMass + m; // Mese corrente: baseMass + eventuale massa eventi
     });
     this.maxMass = Math.max(...this.masses, 1);
     // Massa minima per gravità (solo eventi aggiungono attrazione)

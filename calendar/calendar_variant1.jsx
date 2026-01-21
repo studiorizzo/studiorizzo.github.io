@@ -7,13 +7,12 @@ const BASE_CONFIG = {
   padding: 0,
   headerHeight: 30,
   animationSpeed: 0.08,
-  // Parametri per deformazione migliorata
-  baseMass: 100,              // Massa base per celle del mese corrente
-  gravityStrength: 0,         // DISABILITATO - era troppo forte
-  gravityRadius: 2.5,         // Raggio influenza (in celle)
-  localFalloff: 0.6,          // Falloff esponenziale per influenza locale
-  borderElasticity: 0,        // DISABILITATO - era troppo forte
-  curvature: 0,               // DISABILITATO - causava discontinuità
+  // Parametri per deformazione (attualmente disabilitati)
+  gravityStrength: 0,
+  gravityRadius: 2.5,
+  localFalloff: 0.6,
+  borderElasticity: 0,
+  curvature: 0,
 };
 
 const PAYMENT_TYPES = {
@@ -242,17 +241,16 @@ class AdvancedVertexMesh {
     return row * this.cols + col;
   }
 
-  setMasses(masses) {
-    const { baseMass } = this.config;
-    // TUTTE le celle hanno baseMass (per evitare distorsioni)
-    // Solo le celle con eventi hanno massa extra
+  setMasses(masses, emptyMass = 100) {
+    // emptyMass: massa per celle vuote (configurabile dall'utente)
+    this.emptyMass = emptyMass;
     this.masses = masses.map(m => {
-      if (m < 0) return baseMass; // Fuori mese: stessa massa base
-      return baseMass + m; // Mese corrente: baseMass + eventuale massa eventi
+      if (m < 0) return emptyMass; // Fuori mese
+      if (m === 0) return emptyMass; // Mese corrente senza eventi
+      return emptyMass + m; // Mese corrente con eventi
     });
     this.maxMass = Math.max(...this.masses, 1);
-    // Massa minima per gravità (solo eventi aggiungono attrazione)
-    this.minMassForGravity = baseMass;
+    this.minMassForGravity = emptyMass;
     this.calculateTargetPositions();
   }
 
@@ -844,6 +842,7 @@ export default function CalendarVariant1() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [hoveredCell, setHoveredCell] = useState(-1);
+  const [emptyMass, setEmptyMass] = useState(100);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState(null);
@@ -924,9 +923,9 @@ export default function CalendarVariant1() {
 
   useEffect(() => {
     if (meshRef.current) {
-      meshRef.current.setMasses(masses);
+      meshRef.current.setMasses(masses, emptyMass);
     }
-  }, [masses]);
+  }, [masses, emptyMass]);
 
   useEffect(() => {
     if (!canvasWrapperRef.current) return;
@@ -1030,6 +1029,21 @@ export default function CalendarVariant1() {
           {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            type="number"
+            value={emptyMass}
+            onChange={(e) => setEmptyMass(Number(e.target.value) || 0)}
+            style={{
+              width: 70,
+              padding: '6px 8px',
+              background: 'transparent',
+              border: `1px solid ${headerColors.text}40`,
+              borderRadius: 4,
+              color: headerColors.text,
+              fontSize: '14px',
+              fontFamily: "'Orbitron', sans-serif",
+            }}
+          />
           <button onClick={handleToday}
             style={{ fontFamily: "'Orbitron', sans-serif", background: 'transparent', border: `1px solid ${headerColors.text}40`, color: headerColors.text, padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontSize: '14px' }}>Oggi</button>
           <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}

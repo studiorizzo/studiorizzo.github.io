@@ -78,15 +78,6 @@ export default function CalendarVariant2() {
     };
   };
 
-  // Proiezione 3D -> 2D (ortografica)
-  const project = (point3d, centerX, centerY) => {
-    return {
-      x: centerX + point3d.x,
-      y: centerY - point3d.y, // Y invertito per coordinate schermo
-      z: point3d.z
-    };
-  };
-
   useEffect(() => {
     if (!canvasRef.current || size.width === 0) return;
 
@@ -111,24 +102,59 @@ export default function CalendarVariant2() {
     const radiusX = (W - H / 2) / 2;
 
     // Centri delle ellissi sullo schermo
-    const centerYellow = { x: radiusX, y: H / 2 };
-    const centerGreen = { x: W - radiusX, y: H / 2 };
+    const centerYellowScreen = { x: radiusX, y: H / 2 };
+    const centerGreenScreen = { x: W - radiusX, y: H / 2 };
 
-    const stepsU = 80; // Punti lungo l'ellisse
-    const stepsV = 20; // Punti lungo la superficie (da gialla a verde)
+    // Distanza tra i centri
+    const centerDist = centerGreenScreen.x - centerYellowScreen.x;
 
-    // Genera punto sull'ellisse nel piano XY, poi ruota intorno a X
-    const getEllipsePoint3D = (u, rx, ry, rotationDeg) => {
-      // Ellisse nel piano XY (z=0)
-      const x = rx * Math.cos(u);
-      const y = ry * Math.sin(u);
+    const stepsU = 80; // Punti lungo l'ellisse (circonferenza della banda)
+    const stepsV = 30; // Punti attraverso la banda (da gialla a verde)
+
+    // Punto sull'ellisse gialla (nel suo sistema di coordinate locale, centrato in 0,0,0)
+    const getYellowPoint = (u) => {
+      const x = radiusX * Math.cos(u);
+      const y = radiusY * Math.sin(u);
       const z = 0;
-      // Ruota intorno all'asse X
-      return rotateAroundX(x, y, z, rotationDeg);
+      return rotateAroundX(x, y, z, rotationYellow);
     };
 
-    // Genera tutti i punti della superficie di Seifert
-    // La superficie interpola tra ellisse gialla e ellisse verde
+    // Punto sull'ellisse verde (nel suo sistema di coordinate locale, centrato in 0,0,0)
+    const getGreenPoint = (u) => {
+      const x = radiusX * Math.cos(u);
+      const y = radiusY * Math.sin(u);
+      const z = 0;
+      return rotateAroundX(x, y, z, rotationGreen);
+    };
+
+    // Seifert surface: banda che connette ellisse gialla a ellisse verde
+    // u: parametro lungo la banda (0 -> 2π)
+    // v: parametro attraverso la banda (0 = bordo giallo, 1 = bordo verde)
+    const getSeifertPoint = (u, v) => {
+      // Punto sul bordo giallo
+      const yellow = getYellowPoint(u);
+      // Punto sul bordo verde
+      const green = getGreenPoint(u);
+
+      // Interpolazione lineare tra i due bordi
+      // Il centro si sposta da centerYellow a centerGreen
+      const x = yellow.x * (1 - v) + green.x * v + v * centerDist;
+      const y = yellow.y * (1 - v) + green.y * v;
+      const z = yellow.z * (1 - v) + green.z * v;
+
+      return { x, y, z };
+    };
+
+    // Proiezione 3D -> 2D
+    const project = (p3d) => {
+      return {
+        x: centerYellowScreen.x + p3d.x,
+        y: H / 2 - p3d.y,
+        z: p3d.z
+      };
+    };
+
+    // Genera i quadrilateri della superficie
     const surfaceQuads = [];
 
     for (let i = 0; i < stepsU; i++) {
@@ -139,66 +165,40 @@ export default function CalendarVariant2() {
         const v1 = j / stepsV;
         const v2 = (j + 1) / stepsV;
 
-        // 4 punti 3D dell'ellisse gialla e verde per questo quadrilatero
-        const yellow1 = getEllipsePoint3D(u1, radiusX, radiusY, rotationYellow);
-        const yellow2 = getEllipsePoint3D(u2, radiusX, radiusY, rotationYellow);
-        const green1 = getEllipsePoint3D(u1, radiusX, radiusY, rotationGreen);
-        const green2 = getEllipsePoint3D(u2, radiusX, radiusY, rotationGreen);
-
-        // Interpolazione lineare per i 4 vertici del quad
-        const lerp3D = (a, b, t) => ({
-          x: a.x * (1 - t) + b.x * t,
-          y: a.y * (1 - t) + b.y * t,
-          z: a.z * (1 - t) + b.z * t
-        });
-
-        // I centri 3D delle ellissi (per l'interpolazione della posizione)
-        const centerYellow3D = { x: 0, y: 0, z: 0 };
-        const centerGreen3D = { x: centerGreen.x - centerYellow.x, y: 0, z: 0 };
-
-        // Punti sulla superficie
-        const p1_local = lerp3D(yellow1, green1, v1);
-        const p2_local = lerp3D(yellow2, green2, v1);
-        const p3_local = lerp3D(yellow2, green2, v2);
-        const p4_local = lerp3D(yellow1, green1, v2);
-
-        // Aggiungi offset del centro interpolato
-        const centerOffset = lerp3D(centerYellow3D, centerGreen3D, (v1 + v2) / 2);
-
-        const p1 = { x: p1_local.x + centerYellow.x + v1 * (centerGreen.x - centerYellow.x), y: p1_local.y, z: p1_local.z };
-        const p2 = { x: p2_local.x + centerYellow.x + v1 * (centerGreen.x - centerYellow.x), y: p2_local.y, z: p2_local.z };
-        const p3 = { x: p3_local.x + centerYellow.x + v2 * (centerGreen.x - centerYellow.x), y: p3_local.y, z: p3_local.z };
-        const p4 = { x: p4_local.x + centerYellow.x + v2 * (centerGreen.x - centerYellow.x), y: p4_local.y, z: p4_local.z };
+        // 4 vertici del quadrilatero sulla superficie
+        const p1 = getSeifertPoint(u1, v1);
+        const p2 = getSeifertPoint(u2, v1);
+        const p3 = getSeifertPoint(u2, v2);
+        const p4 = getSeifertPoint(u1, v2);
 
         // Proietta in 2D
-        const proj1 = project(p1, 0, H / 2);
-        const proj2 = project(p2, 0, H / 2);
-        const proj3 = project(p3, 0, H / 2);
-        const proj4 = project(p4, 0, H / 2);
+        const proj1 = project(p1);
+        const proj2 = project(p2);
+        const proj3 = project(p3);
+        const proj4 = project(p4);
 
         // Z medio per depth sorting
         const avgZ = (p1.z + p2.z + p3.z + p4.z) / 4;
 
-        // Colore interpolato giallo -> verde
-        const t = (v1 + v2) / 2;
-        const r = Math.round(255 * (1 - t) + 0 * t);
-        const g = Math.round(255 * (1 - t) + 255 * t);
-        const b = 0;
+        // Colore della superficie (grigio chiaro con leggera variazione)
+        const shade = 200 + Math.sin(u1 * 3) * 30;
 
         surfaceQuads.push({
           points: [proj1, proj2, proj3, proj4],
           z: avgZ,
-          color: `rgba(${r}, ${g}, ${b}, 0.6)`
+          color: `rgba(${shade}, ${shade}, ${shade}, 0.7)`
         });
       }
     }
 
-    // Depth sort (painter's algorithm) - disegna prima quelli più lontani
+    // Depth sort - disegna prima quelli più lontani
     surfaceQuads.sort((a, b) => a.z - b.z);
 
     // Disegna i quadrilateri della superficie
     for (const quad of surfaceQuads) {
       ctx.fillStyle = quad.color;
+      ctx.strokeStyle = 'rgba(150, 150, 150, 0.3)';
+      ctx.lineWidth = 0.5;
       ctx.beginPath();
       ctx.moveTo(quad.points[0].x, quad.points[0].y);
       ctx.lineTo(quad.points[1].x, quad.points[1].y);
@@ -206,17 +206,18 @@ export default function CalendarVariant2() {
       ctx.lineTo(quad.points[3].x, quad.points[3].y);
       ctx.closePath();
       ctx.fill();
+      ctx.stroke();
     }
 
-    // Disegna le ellissi come contorni
-    ctx.lineWidth = 3;
+    // Disegna le ellissi come bordi della superficie
+    ctx.lineWidth = 4;
 
-    // Ellisse gialla
+    // Ellisse gialla (bordo a v=0)
     const yellowPoints = [];
     for (let i = 0; i <= stepsU; i++) {
       const u = (i / stepsU) * Math.PI * 2;
-      const p3d = getEllipsePoint3D(u, radiusX, radiusY, rotationYellow);
-      const proj = project({ x: p3d.x + centerYellow.x, y: p3d.y, z: p3d.z }, 0, H / 2);
+      const p3d = getYellowPoint(u);
+      const proj = project(p3d);
       yellowPoints.push(proj);
     }
 
@@ -229,12 +230,13 @@ export default function CalendarVariant2() {
     ctx.closePath();
     ctx.stroke();
 
-    // Ellisse verde
+    // Ellisse verde (bordo a v=1)
     const greenPoints = [];
     for (let i = 0; i <= stepsU; i++) {
       const u = (i / stepsU) * Math.PI * 2;
-      const p3d = getEllipsePoint3D(u, radiusX, radiusY, rotationGreen);
-      const proj = project({ x: p3d.x + centerGreen.x, y: p3d.y, z: p3d.z }, 0, H / 2);
+      const p3d = getGreenPoint(u);
+      // Aggiungi l'offset del centro
+      const proj = project({ x: p3d.x + centerDist, y: p3d.y, z: p3d.z });
       greenPoints.push(proj);
     }
 

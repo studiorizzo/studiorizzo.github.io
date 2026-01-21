@@ -23,6 +23,11 @@
   padding: 0 16px 16px 16px;
 }
 
+.content.fullscreen {
+  padding: 0;
+  height: 100vh;
+}
+
 .overlay {
   position: fixed;
   inset: 0;

@@ -9,11 +9,11 @@ const BASE_CONFIG = {
   animationSpeed: 0.08,
   // Parametri per deformazione migliorata
   baseMass: 100,              // Massa base per celle del mese corrente
-  gravityStrength: 0.15,      // Forza attrazione gravitazionale
+  gravityStrength: 0,         // DISABILITATO - era troppo forte
   gravityRadius: 2.5,         // Raggio influenza (in celle)
   localFalloff: 0.6,          // Falloff esponenziale per influenza locale
-  borderElasticity: 0.3,      // Elasticità bordi (0 = fisso, 1 = libero)
-  curvature: 0.25,            // Curvatura bordi celle (0 = lineare, 1 = max curva)
+  borderElasticity: 0,        // DISABILITATO - era troppo forte
+  curvature: 0,               // DISABILITATO - causava discontinuità
 };
 
 const PAYMENT_TYPES = {

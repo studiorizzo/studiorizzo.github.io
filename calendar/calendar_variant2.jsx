@@ -41,79 +41,79 @@ export default function CalendarVariant2() {
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, W, H);
 
-    // Ellissi (Hopf link): altezza = H, larghezza = W - H/2
+    // Ellisse gialla: altezza = H, larghezza = W - H/2
     const radiusY = H / 2;
     const radiusX = (W - H / 2) / 2;
 
+    // Centro ellisse gialla (a sinistra)
     const centerA = { x: radiusX, y: H / 2 };
-    const centerB = { x: W - radiusX, y: H / 2 };
 
-    // Seifert surface per Hopf link
-    // La superficie connette le due ellissi con una banda "twisted"
-    // In 2D la rappresentiamo come una superficie tra le curve
+    // Ellisse verde ruotata 90° orizzontalmente: appare come linea orizzontale
+    // Posizione: y = H/2, da x = W - 2*radiusX a x = W
+    const lineY = H / 2;
+    const lineStartX = W - 2 * radiusX;
+    const lineEndX = W;
 
-    ctx.globalAlpha = 0.3;
+    // Seifert surface: superficie continua che connette ellisse gialla a linea verde
+    // La superficie si "attorciglia" collegando punti dell'ellisse alla linea
 
-    // Disegna la superficie di Seifert come una banda che connette le ellissi
-    // Usa strips verticali per simulare la torsione
-    const strips = 50;
-    for (let i = 0; i < strips; i++) {
-      const t = i / strips;
-      const nextT = (i + 1) / strips;
+    ctx.globalAlpha = 0.4;
 
-      // Parametro angolare sulle ellissi
-      const angle1 = Math.PI + t * Math.PI; // metà inferiore ellisse A (da sinistra)
-      const angle2 = -nextT * Math.PI;       // metà superiore ellisse B (da destra)
+    // Creo un gradiente per la superficie
+    const gradient = ctx.createLinearGradient(centerA.x, centerA.y, (lineStartX + lineEndX) / 2, lineY);
+    gradient.addColorStop(0, 'rgba(255, 255, 0, 0.6)');
+    gradient.addColorStop(1, 'rgba(0, 255, 0, 0.6)');
 
-      const angle1Next = Math.PI + nextT * Math.PI;
-      const angle2Next = -(i + 1 + 1) / strips * Math.PI;
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
 
-      // Punti sulle ellissi
-      const p1 = {
-        x: centerA.x + radiusX * Math.cos(angle1),
-        y: centerA.y + radiusY * Math.sin(angle1)
-      };
-      const p2 = {
-        x: centerB.x + radiusX * Math.cos(angle2),
-        y: centerB.y + radiusY * Math.sin(angle2)
-      };
-      const p1Next = {
-        x: centerA.x + radiusX * Math.cos(angle1Next),
-        y: centerA.y + radiusY * Math.sin(angle1Next)
-      };
-      const p2Next = {
-        x: centerB.x + radiusX * Math.cos(angle2Next),
-        y: centerB.y + radiusY * Math.sin(angle2Next)
-      };
+    // Parto dal punto sinistro della linea verde
+    ctx.moveTo(lineStartX, lineY);
 
-      // Gradiente per effetto profondità
-      const gradient = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
-      gradient.addColorStop(0, 'rgba(255, 255, 0, 0.5)');
-      gradient.addColorStop(1, 'rgba(0, 255, 0, 0.5)');
-
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.lineTo(p2Next.x, p2Next.y);
-      ctx.lineTo(p1Next.x, p1Next.y);
-      ctx.closePath();
-      ctx.fill();
+    // Percorro la metà superiore dell'ellisse gialla (da destra a sinistra)
+    // Questo crea la connessione dalla linea all'ellisse
+    const steps = 100;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      // Angolo da 0 a -PI (metà superiore, da destra a sinistra)
+      const angle = -t * Math.PI;
+      const x = centerA.x + radiusX * Math.cos(angle);
+      const y = centerA.y + radiusY * Math.sin(angle);
+      ctx.lineTo(x, y);
     }
+
+    // Percorro la metà inferiore dell'ellisse gialla (da sinistra a destra)
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      // Angolo da -PI a -2*PI (metà inferiore, da sinistra a destra)
+      const angle = -Math.PI - t * Math.PI;
+      const x = centerA.x + radiusX * Math.cos(angle);
+      const y = centerA.y + radiusY * Math.sin(angle);
+      ctx.lineTo(x, y);
+    }
+
+    // Torno al punto destro della linea verde
+    ctx.lineTo(lineEndX, lineY);
+
+    // Chiudo lungo la linea verde
+    ctx.closePath();
+    ctx.fill();
 
     ctx.globalAlpha = 1;
     ctx.lineWidth = 3;
 
-    // Ellisse A gialla tutto a SINISTRA (solo bordo)
+    // Ellisse gialla (frontale)
     ctx.strokeStyle = 'yellow';
     ctx.beginPath();
     ctx.ellipse(centerA.x, centerA.y, radiusX, radiusY, 0, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Ellisse B verde tutto a DESTRA (solo bordo)
+    // Linea verde (ellisse ruotata 90° vista di taglio)
     ctx.strokeStyle = 'green';
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.ellipse(centerB.x, centerB.y, radiusX, radiusY, 0, 0, Math.PI * 2);
+    ctx.moveTo(lineStartX, lineY);
+    ctx.lineTo(lineEndX, lineY);
     ctx.stroke();
 
   }, [size, bgColor]);

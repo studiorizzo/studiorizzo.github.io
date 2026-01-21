@@ -46,21 +46,21 @@ export default function CalendarVariant2() {
 
     ctx.globalAlpha = 0.5;
 
-    // Cerchio A giallo a SINISTRA - centro a W/3 per garantire sovrapposizione
+    // Cerchio A giallo tutto a SINISTRA
     ctx.fillStyle = 'yellow';
     ctx.beginPath();
-    ctx.arc(W / 3, H / 2, radius, 0, Math.PI * 2);
+    ctx.arc(radius, H / 2, radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // Cerchio B verde a DESTRA - centro a 2W/3
+    // Cerchio B verde tutto a DESTRA
     ctx.fillStyle = 'green';
     ctx.beginPath();
-    ctx.arc(2 * W / 3, H / 2, radius, 0, Math.PI * 2);
+    ctx.arc(W - radius, H / 2, radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // Rettangolo rosso sul diametro del cerchio A
+    // Rettangolo rosso sul diametro del cerchio B (verde, a destra)
     ctx.fillStyle = 'red';
-    const rectX = W / 3 - radius;
+    const rectX = W - radius * 2;
     ctx.fillRect(rectX, H / 2, radius * 2, H / 2);
 
   }, [size, bgColor]);

@@ -4,8 +4,8 @@ export default function CalendarVariant2() {
   const canvasRef = useRef(null);
   const wrapperRef = useRef(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const [viewAngleX, setViewAngleX] = useState(20);
-  const [viewAngleY, setViewAngleY] = useState(30);
+  const [viewAngleX, setViewAngleX] = useState(35);
+  const [viewAngleY, setViewAngleY] = useState(-50);
   const [isDragging, setIsDragging] = useState(false);
   const [lastMouse, setLastMouse] = useState({ x: 0, y: 0 });
 

@@ -89,7 +89,6 @@ export default function CalendarVariant2() {
     const radiusY = H / 2;
     const radiusX = (W - H / 2) / 2;
 
-    // Centri delle ellissi sullo schermo
     const centerYellowScreen = { x: radiusX, y: H / 2 };
     const centerGreenScreen = { x: W - radiusX, y: H / 2 };
     const centerDist = centerGreenScreen.x - centerYellowScreen.x;
@@ -121,36 +120,26 @@ export default function CalendarVariant2() {
       return rotateAroundX(x, y, 0, rotationGreen);
     };
 
-    // Seifert surface come nastro di Möbius:
-    // - u va da 0 a 2π (giro completo)
-    // - v va da -1 a 1 (larghezza della banda)
-    // - Il twist di 180° è dato da: mentre u va da 0 a 2π,
-    //   il "verso" locale della banda ruota di π
+    // Seifert surface per Hopf link:
+    // È un ANNULUS (banda orientabile) con TWO HALF-TWISTS
+    // u: parametro lungo la banda (0 -> 2π)
+    // v: parametro attraverso la banda (0 = bordo giallo, 1 = bordo verde)
+    // Two half-twists = twist totale di π mentre u va da 0 a 2π
     const getSeifertPoint = (u, v) => {
-      // v va da 0 a 1, lo mappiamo a "posizione sulla banda"
-      // 0 = bordo giallo, 1 = bordo verde
-
-      // Il twist: l'angolo locale ruota di π mentre u fa il giro completo
-      const twist = u / 2; // Quando u=2π, twist=π (mezzo giro)
-
-      // Punto sull'ellisse gialla
+      // Punto sul bordo giallo
       const yellow = getYellowPoint(u);
-      // Punto sull'ellisse verde (sfasato dal twist)
-      const green = getGreenPoint(u + Math.PI);
 
-      // Il vettore che va da giallo a verde
-      const dx = green.x + centerDist - yellow.x;
-      const dy = green.y - yellow.y;
-      const dz = green.z - yellow.z;
+      // Per l'annulus con two half-twists:
+      // Il punto sul bordo verde è sfasato progressivamente
+      // Quando u=2π, lo sfasamento totale è π (two half-twists)
+      const greenOffset = u; // Sfasamento progressivo: da 0 a 2π
+      const green = getGreenPoint(u + greenOffset);
 
-      // Applica il twist: ruota il vettore (dx, dy, dz) attorno alla direzione tangente
-      const cosT = Math.cos(twist);
-      const sinT = Math.sin(twist);
-
-      // Posizione sulla superficie
-      const x = yellow.x + v * (dx * cosT);
-      const y = yellow.y + v * (dy * cosT - dz * sinT);
-      const z = yellow.z + v * (dy * sinT + dz * cosT);
+      // Interpolazione lineare tra giallo e verde
+      const t = v;
+      const x = yellow.x * (1 - t) + (green.x + centerDist) * t;
+      const y = yellow.y * (1 - t) + green.y * t;
+      const z = yellow.z * (1 - t) + green.z * t;
 
       return { x, y, z };
     };
@@ -162,7 +151,7 @@ export default function CalendarVariant2() {
       z: p3d.z
     });
 
-    // Genera quadrilateri della superficie
+    // Genera quadrilateri
     const surfaceQuads = [];
 
     for (let i = 0; i < stepsU; i++) {
@@ -184,12 +173,30 @@ export default function CalendarVariant2() {
         const proj4 = project(p4);
 
         const avgZ = (p1.z + p2.z + p3.z + p4.z) / 4;
-        const shade = 180 + avgZ * 0.3;
+
+        // Calcola normale per shading
+        const edge1 = { x: p2.x - p1.x, y: p2.y - p1.y, z: p2.z - p1.z };
+        const edge2 = { x: p4.x - p1.x, y: p4.y - p1.y, z: p4.z - p1.z };
+        const normal = {
+          x: edge1.y * edge2.z - edge1.z * edge2.y,
+          y: edge1.z * edge2.x - edge1.x * edge2.z,
+          z: edge1.x * edge2.y - edge1.y * edge2.x
+        };
+        const len = Math.sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+        if (len > 0) {
+          normal.x /= len;
+          normal.y /= len;
+          normal.z /= len;
+        }
+
+        // Luce dalla camera (direzione Z)
+        const lightIntensity = Math.abs(normal.z);
+        const shade = Math.floor(150 + lightIntensity * 100);
 
         surfaceQuads.push({
           points: [proj1, proj2, proj3, proj4],
           z: avgZ,
-          color: `rgba(${shade}, ${shade}, ${shade}, 0.8)`
+          color: `rgba(${shade}, ${shade}, ${shade}, 0.85)`
         });
       }
     }
@@ -200,7 +207,7 @@ export default function CalendarVariant2() {
     // Disegna superficie
     for (const quad of surfaceQuads) {
       ctx.fillStyle = quad.color;
-      ctx.strokeStyle = 'rgba(100, 100, 100, 0.2)';
+      ctx.strokeStyle = 'rgba(100, 100, 100, 0.15)';
       ctx.lineWidth = 0.5;
       ctx.beginPath();
       ctx.moveTo(quad.points[0].x, quad.points[0].y);

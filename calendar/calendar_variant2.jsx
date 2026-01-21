@@ -1,13 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useTheme } from '../src/context/ThemeContext';
 
 export default function CalendarVariant2() {
-  const { mode } = useTheme();
   const canvasRef = useRef(null);
   const wrapperRef = useRef(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
-  const bgColor = mode === 'dark' ? '#0E1416' : '#F5FAFC';
+  const bgColor = '#ffffff'; // Sfondo bianco
 
   useEffect(() => {
     if (!wrapperRef.current) return;

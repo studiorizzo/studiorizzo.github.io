@@ -84,40 +84,40 @@ export default function CalendarVariant2() {
       z: p.z
     });
 
-    // Hopf link: due cerchi linkati
-    // Cerchio 1 (verde): nel piano XZ, raggio 1, centrato in origine
-    // Cerchio 2 (rosso): nel piano YZ, passante per (1,0,0) con raggio 1
+    // Hopf link con Seifert surface come nell'immagine Wikipedia
+    // Basato sulla parametrizzazione standard della Seifert surface per Hopf link
 
-    const R = 1; // Raggio dei cerchi
+    const R = 1.0; // Raggio base
 
-    // Cerchio verde (nel piano XZ, centrato in (0, 0, 0))
-    const getGreenCircle = (t) => {
-      return { x: R * Math.cos(t), y: 0, z: R * Math.sin(t) };
-    };
+    // La Seifert surface per l'Hopf link può essere parametrizzata come:
+    // Un "annulus" (anello) che connette due cerchi con un half-twist
 
-    // Cerchio rosso (nel piano XY, ma traslato/ruotato per essere linkato)
-    // Per un Hopf link classico, il secondo cerchio passa per il centro del primo
-    const getRedCircle = (t) => {
-      // Cerchio nel piano XY, centrato in (0, 0, 0)
-      return { x: R * Math.cos(t), y: R * Math.sin(t), z: 0 };
-    };
-
-    // Seifert surface per Hopf link
-    // Parametrizzazione: interpola tra i due cerchi con un twist
-    // u: 0 -> 2π (giro attorno)
-    // v: 0 -> 1 (da cerchio verde a cerchio rosso)
+    // Parametri: u = angolo (0 to 2π), v = posizione sulla banda (0 to 1)
     const getSeifertPoint = (u, v) => {
-      const green = getGreenCircle(u);
-      // Il cerchio rosso è sfasato di π*v per creare il twist
-      const red = getRedCircle(u + Math.PI * v);
+      // Raggio che varia: più grande ai bordi, più piccolo al centro
+      const r = 0.3 + 0.7 * Math.abs(2 * v - 1);
 
-      // Interpolazione con twist
+      // Altezza che varia linearmente
+      const h = 1.0 - 2 * v; // da 1 a -1
+
+      // Il twist: l'angolo viene sfasato in base a v
+      // Questo crea l'effetto di "attorcigliamento"
+      const twist = Math.PI * v;
+      const angle = u + twist;
+
       return {
-        x: green.x * (1 - v) + red.x * v,
-        y: green.y * (1 - v) + red.y * v,
-        z: green.z * (1 - v) + red.z * v
+        x: r * Math.cos(angle),
+        y: r * Math.sin(angle),
+        z: h
       };
     };
+
+    // I bordi della superficie sono i due cerchi dell'Hopf link
+    // Cerchio verde: v = 0 (in alto)
+    const getGreenCircle = (t) => getSeifertPoint(t, 0);
+
+    // Cerchio rosso: v = 1 (in basso)
+    const getRedCircle = (t) => getSeifertPoint(t, 1);
 
     const stepsU = 60;
     const stepsV = 30;

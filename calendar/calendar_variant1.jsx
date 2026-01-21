@@ -6,9 +6,8 @@ const BASE_CONFIG = {
   rows: 6,
   padding: 0,
   headerHeight: 30,
-  emptyMassMultiplier: 0.9,
   animationSpeed: 0.08,
-  // Nuovi parametri per deformazione migliorata
+  // Parametri per deformazione migliorata
   gravityStrength: 0.15,      // Forza attrazione gravitazionale
   gravityRadius: 2.5,         // Raggio influenza (in celle)
   localFalloff: 0.6,          // Falloff esponenziale per influenza locale
@@ -242,10 +241,10 @@ class AdvancedVertexMesh {
     return row * this.cols + col;
   }
 
-  setMasses(masses, emptyMass) {
-    this.emptyMass = emptyMass;
-    this.masses = masses.map(m => m <= 0 ? emptyMass : m);
-    this.maxMass = Math.max(...this.masses);
+  setMasses(masses) {
+    // Celle senza eventi o fuori mese: massa 0
+    this.masses = masses.map(m => m <= 0 ? 0 : m);
+    this.maxMass = Math.max(...this.masses, 1); // Evita divisione per 0
     this.calculateTargetPositions();
   }
 
@@ -268,14 +267,14 @@ class AdvancedVertexMesh {
         const cellIdx = cellRow * this.cols + cellCol;
         const mass = this.masses[cellIdx];
 
-        if (mass <= this.emptyMass) continue;
+        if (mass <= 0) continue;
 
         const distance = this.getDistanceInCells(vRow, vCol, cellRow, cellCol);
 
         // Falloff basato sulla distanza
         if (distance > gravityRadius) continue;
 
-        const normalizedMass = (mass - this.emptyMass) / (this.maxMass - this.emptyMass + 1);
+        const normalizedMass = mass / this.maxMass;
         const falloff = Math.pow(1 - distance / gravityRadius, localFalloff);
         const influence = normalizedMass * falloff * gravityStrength;
 
@@ -445,9 +444,7 @@ class AdvancedVertexMesh {
     const v = this.getCellVertices(cellIndex);
     const { curvature } = this.config;
     const mass = this.masses[cellIndex];
-    const massInfluence = this.maxMass > this.emptyMass
-      ? (mass - this.emptyMass) / (this.maxMass - this.emptyMass)
-      : 0;
+    const massInfluence = this.maxMass > 0 ? mass / this.maxMass : 0;
 
     // Curvatura aumenta con la massa
     const curve = curvature * (0.5 + massInfluence * 0.5);
@@ -888,19 +885,6 @@ export default function CalendarVariant1() {
     return grouped;
   }, [events]);
 
-  const emptyMass = useMemo(() => {
-    const monthEvents = events.filter(e =>
-      e.date.getMonth() === currentDate.getMonth() &&
-      e.date.getFullYear() === currentDate.getFullYear()
-    );
-    if (monthEvents.length === 0) return 100;
-
-    const totalAmount = monthEvents.reduce((sum, e) => sum + e.amount, 0);
-    const avgAmount = totalAmount / monthEvents.length;
-
-    return Math.log10(avgAmount + 1) * BASE_CONFIG.emptyMassMultiplier * 100;
-  }, [events, currentDate]);
-
   const masses = useMemo(() => {
     return calendarDays.map(day => {
       if (!day.isCurrentMonth) return -1;
@@ -915,9 +899,9 @@ export default function CalendarVariant1() {
 
   useEffect(() => {
     if (meshRef.current) {
-      meshRef.current.setMasses(masses, emptyMass);
+      meshRef.current.setMasses(masses);
     }
-  }, [masses, emptyMass]);
+  }, [masses]);
 
   useEffect(() => {
     if (!canvasWrapperRef.current) return;

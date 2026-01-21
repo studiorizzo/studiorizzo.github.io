@@ -40,8 +40,8 @@ function Header({ onMenuClick }) {
   const { mode, contrast, toggleMode, setContrastLevel } = useTheme()
   const [isScrolled, setIsScrolled] = useState(false)
 
-  // Mostra controlli tema su calendario-canvas-light e variante-1
-  const showThemeControls = location.pathname.includes('calendario-canvas-light') || location.pathname.includes('variante-1')
+  // Mostra controlli tema su calendario-canvas-light, variante-1 e variante-2
+  const showThemeControls = location.pathname.includes('calendario-canvas-light') || location.pathname.includes('variante-1') || location.pathname.includes('variante-2')
 
   // Detect scroll
   useEffect(() => {

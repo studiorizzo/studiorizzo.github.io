@@ -30,6 +30,16 @@ function Sidebar({ isOpen, onClose }) {
           </NavLink>
         </div>
 
+        {/* Variante 2 - Möbius */}
+        <div className={styles.section}>
+          <NavLink to="/variante-2" className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}>
+            <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
+              <path d="M5.5 4.5C3.5 4.5 2 6 2 8s1.5 3.5 3.5 3.5c1.2 0 2.2-.6 2.8-1.5h-.6c-.5.6-1.3 1-2.2 1C4.1 11 3 9.9 3 8s1.1-3 2.5-3c.9 0 1.7.4 2.2 1h.6c-.6-.9-1.6-1.5-2.8-1.5zm5 0c-1.2 0-2.2.6-2.8 1.5h.6c.5-.6 1.3-1 2.2-1C11.9 5 13 6.1 13 8s-1.1 3-2.5 3c-.9 0-1.7-.4-2.2-1h-.6c.6.9 1.6 1.5 2.8 1.5 2 0 3.5-1.5 3.5-3.5s-1.5-3.5-3.5-3.5z"></path>
+            </svg>
+            <span>Variante 2</span>
+          </NavLink>
+        </div>
+
         {/* Scadenze */}
         <div className={styles.section}>
           <NavLink to="/" className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}>

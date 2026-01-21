@@ -8,6 +8,7 @@ const BASE_CONFIG = {
   headerHeight: 30,
   animationSpeed: 0.08,
   // Parametri per deformazione migliorata
+  baseMass: 100,              // Massa base per celle del mese corrente
   gravityStrength: 0.15,      // Forza attrazione gravitazionale
   gravityRadius: 2.5,         // Raggio influenza (in celle)
   localFalloff: 0.6,          // Falloff esponenziale per influenza locale
@@ -242,9 +243,16 @@ class AdvancedVertexMesh {
   }
 
   setMasses(masses) {
-    // Celle senza eventi o fuori mese: massa 0
-    this.masses = masses.map(m => m <= 0 ? 0 : m);
-    this.maxMass = Math.max(...this.masses, 1); // Evita divisione per 0
+    const { baseMass } = this.config;
+    // Celle fuori mese: massa 0
+    // Celle del mese corrente: baseMass + eventMass
+    this.masses = masses.map(m => {
+      if (m < 0) return 0; // Fuori mese
+      return baseMass + m; // baseMass + eventuale massa eventi
+    });
+    this.maxMass = Math.max(...this.masses, 1);
+    // Massa minima per gravità (solo eventi aggiungono attrazione)
+    this.minMassForGravity = baseMass;
     this.calculateTargetPositions();
   }
 
@@ -267,14 +275,18 @@ class AdvancedVertexMesh {
         const cellIdx = cellRow * this.cols + cellCol;
         const mass = this.masses[cellIdx];
 
-        if (mass <= 0) continue;
+        // Solo celle con eventi (massa > baseMass) generano attrazione
+        if (mass <= this.minMassForGravity) continue;
 
         const distance = this.getDistanceInCells(vRow, vCol, cellRow, cellCol);
 
         // Falloff basato sulla distanza
         if (distance > gravityRadius) continue;
 
-        const normalizedMass = mass / this.maxMass;
+        // Normalizza solo la massa "extra" rispetto alla base
+        const extraMass = mass - this.minMassForGravity;
+        const maxExtraMass = this.maxMass - this.minMassForGravity;
+        const normalizedMass = maxExtraMass > 0 ? extraMass / maxExtraMass : 0;
         const falloff = Math.pow(1 - distance / gravityRadius, localFalloff);
         const influence = normalizedMass * falloff * gravityStrength;
 
@@ -454,9 +466,12 @@ class AdvancedVertexMesh {
     const v = this.getCellVertices(cellIndex);
     const { curvature } = this.config;
     const mass = this.masses[cellIndex];
-    const massInfluence = this.maxMass > 0 ? mass / this.maxMass : 0;
+    // Curvatura basata sulla massa extra (sopra la base)
+    const extraMass = Math.max(0, mass - (this.minMassForGravity || 0));
+    const maxExtraMass = this.maxMass - (this.minMassForGravity || 0);
+    const massInfluence = maxExtraMass > 0 ? extraMass / maxExtraMass : 0;
 
-    // Curvatura aumenta con la massa
+    // Curvatura aumenta con la massa extra
     const curve = curvature * (0.5 + massInfluence * 0.5);
 
     // Centro della cella

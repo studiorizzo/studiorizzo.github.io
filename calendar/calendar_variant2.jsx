@@ -66,18 +66,6 @@ export default function CalendarVariant2() {
     setActiveEllipse(null);
   };
 
-  // Rotazione intorno all'asse X (orizzontale)
-  const rotateAroundX = (x, y, z, angleDeg) => {
-    const rad = (angleDeg * Math.PI) / 180;
-    const cos = Math.cos(rad);
-    const sin = Math.sin(rad);
-    return {
-      x: x,
-      y: y * cos - z * sin,
-      z: y * sin + z * cos
-    };
-  };
-
   useEffect(() => {
     if (!canvasRef.current || size.width === 0) return;
 
@@ -104,59 +92,77 @@ export default function CalendarVariant2() {
     // Centri delle ellissi sullo schermo
     const centerYellowScreen = { x: radiusX, y: H / 2 };
     const centerGreenScreen = { x: W - radiusX, y: H / 2 };
-
-    // Distanza tra i centri
     const centerDist = centerGreenScreen.x - centerYellowScreen.x;
 
-    const stepsU = 80; // Punti lungo l'ellisse (circonferenza della banda)
-    const stepsV = 30; // Punti attraverso la banda (da gialla a verde)
+    // Rotazione intorno all'asse X
+    const rotateAroundX = (x, y, z, angleDeg) => {
+      const rad = (angleDeg * Math.PI) / 180;
+      return {
+        x: x,
+        y: y * Math.cos(rad) - z * Math.sin(rad),
+        z: y * Math.sin(rad) + z * Math.cos(rad)
+      };
+    };
 
-    // Punto sull'ellisse gialla (nel suo sistema di coordinate locale, centrato in 0,0,0)
+    const stepsU = 100;
+    const stepsV = 40;
+
+    // Punto sull'ellisse gialla
     const getYellowPoint = (u) => {
       const x = radiusX * Math.cos(u);
       const y = radiusY * Math.sin(u);
-      const z = 0;
-      return rotateAroundX(x, y, z, rotationYellow);
+      return rotateAroundX(x, y, 0, rotationYellow);
     };
 
-    // Punto sull'ellisse verde (nel suo sistema di coordinate locale, centrato in 0,0,0)
+    // Punto sull'ellisse verde
     const getGreenPoint = (u) => {
       const x = radiusX * Math.cos(u);
       const y = radiusY * Math.sin(u);
-      const z = 0;
-      return rotateAroundX(x, y, z, rotationGreen);
+      return rotateAroundX(x, y, 0, rotationGreen);
     };
 
-    // Seifert surface: banda TWISTED che connette ellisse gialla a ellisse verde
-    // u: parametro lungo la banda (0 -> 2π)
-    // v: parametro attraverso la banda (0 = bordo giallo, 1 = bordo verde)
-    // Il twist: il punto u sulla gialla si connette al punto (u + π) sulla verde
-    // Questo crea una superficie a UN solo lato (come Möbius)
+    // Seifert surface come nastro di Möbius:
+    // - u va da 0 a 2π (giro completo)
+    // - v va da -1 a 1 (larghezza della banda)
+    // - Il twist di 180° è dato da: mentre u va da 0 a 2π,
+    //   il "verso" locale della banda ruota di π
     const getSeifertPoint = (u, v) => {
-      // Punto sul bordo giallo (parametro u)
+      // v va da 0 a 1, lo mappiamo a "posizione sulla banda"
+      // 0 = bordo giallo, 1 = bordo verde
+
+      // Il twist: l'angolo locale ruota di π mentre u fa il giro completo
+      const twist = u / 2; // Quando u=2π, twist=π (mezzo giro)
+
+      // Punto sull'ellisse gialla
       const yellow = getYellowPoint(u);
-      // Punto sul bordo verde SFASATO di π (mezzo giro) - questo crea il twist!
+      // Punto sull'ellisse verde (sfasato dal twist)
       const green = getGreenPoint(u + Math.PI);
 
-      // Interpolazione lineare tra i due bordi
-      // Il centro si sposta da centerYellow a centerGreen
-      const x = yellow.x * (1 - v) + green.x * v + v * centerDist;
-      const y = yellow.y * (1 - v) + green.y * v;
-      const z = yellow.z * (1 - v) + green.z * v;
+      // Il vettore che va da giallo a verde
+      const dx = green.x + centerDist - yellow.x;
+      const dy = green.y - yellow.y;
+      const dz = green.z - yellow.z;
+
+      // Applica il twist: ruota il vettore (dx, dy, dz) attorno alla direzione tangente
+      const cosT = Math.cos(twist);
+      const sinT = Math.sin(twist);
+
+      // Posizione sulla superficie
+      const x = yellow.x + v * (dx * cosT);
+      const y = yellow.y + v * (dy * cosT - dz * sinT);
+      const z = yellow.z + v * (dy * sinT + dz * cosT);
 
       return { x, y, z };
     };
 
     // Proiezione 3D -> 2D
-    const project = (p3d) => {
-      return {
-        x: centerYellowScreen.x + p3d.x,
-        y: H / 2 - p3d.y,
-        z: p3d.z
-      };
-    };
+    const project = (p3d) => ({
+      x: centerYellowScreen.x + p3d.x,
+      y: H / 2 - p3d.y,
+      z: p3d.z
+    });
 
-    // Genera i quadrilateri della superficie
+    // Genera quadrilateri della superficie
     const surfaceQuads = [];
 
     for (let i = 0; i < stepsU; i++) {
@@ -167,39 +173,34 @@ export default function CalendarVariant2() {
         const v1 = j / stepsV;
         const v2 = (j + 1) / stepsV;
 
-        // 4 vertici del quadrilatero sulla superficie
         const p1 = getSeifertPoint(u1, v1);
         const p2 = getSeifertPoint(u2, v1);
         const p3 = getSeifertPoint(u2, v2);
         const p4 = getSeifertPoint(u1, v2);
 
-        // Proietta in 2D
         const proj1 = project(p1);
         const proj2 = project(p2);
         const proj3 = project(p3);
         const proj4 = project(p4);
 
-        // Z medio per depth sorting
         const avgZ = (p1.z + p2.z + p3.z + p4.z) / 4;
-
-        // Colore della superficie (grigio chiaro con leggera variazione)
-        const shade = 200 + Math.sin(u1 * 3) * 30;
+        const shade = 180 + avgZ * 0.3;
 
         surfaceQuads.push({
           points: [proj1, proj2, proj3, proj4],
           z: avgZ,
-          color: `rgba(${shade}, ${shade}, ${shade}, 0.7)`
+          color: `rgba(${shade}, ${shade}, ${shade}, 0.8)`
         });
       }
     }
 
-    // Depth sort - disegna prima quelli più lontani
+    // Depth sort
     surfaceQuads.sort((a, b) => a.z - b.z);
 
-    // Disegna i quadrilateri della superficie
+    // Disegna superficie
     for (const quad of surfaceQuads) {
       ctx.fillStyle = quad.color;
-      ctx.strokeStyle = 'rgba(150, 150, 150, 0.3)';
+      ctx.strokeStyle = 'rgba(100, 100, 100, 0.2)';
       ctx.lineWidth = 0.5;
       ctx.beginPath();
       ctx.moveTo(quad.points[0].x, quad.points[0].y);
@@ -211,47 +212,34 @@ export default function CalendarVariant2() {
       ctx.stroke();
     }
 
-    // Disegna le ellissi come bordi della superficie
+    // Disegna ellisse gialla
     ctx.lineWidth = 4;
-
-    // Ellisse gialla (bordo a v=0)
-    const yellowPoints = [];
+    ctx.strokeStyle = 'yellow';
+    ctx.beginPath();
     for (let i = 0; i <= stepsU; i++) {
       const u = (i / stepsU) * Math.PI * 2;
       const p3d = getYellowPoint(u);
       const proj = project(p3d);
-      yellowPoints.push(proj);
-    }
-
-    ctx.strokeStyle = 'yellow';
-    ctx.beginPath();
-    ctx.moveTo(yellowPoints[0].x, yellowPoints[0].y);
-    for (let i = 1; i < yellowPoints.length; i++) {
-      ctx.lineTo(yellowPoints[i].x, yellowPoints[i].y);
+      if (i === 0) ctx.moveTo(proj.x, proj.y);
+      else ctx.lineTo(proj.x, proj.y);
     }
     ctx.closePath();
     ctx.stroke();
 
-    // Ellisse verde (bordo a v=1)
-    const greenPoints = [];
+    // Disegna ellisse verde
+    ctx.strokeStyle = 'green';
+    ctx.beginPath();
     for (let i = 0; i <= stepsU; i++) {
       const u = (i / stepsU) * Math.PI * 2;
       const p3d = getGreenPoint(u);
-      // Aggiungi l'offset del centro
       const proj = project({ x: p3d.x + centerDist, y: p3d.y, z: p3d.z });
-      greenPoints.push(proj);
-    }
-
-    ctx.strokeStyle = 'green';
-    ctx.beginPath();
-    ctx.moveTo(greenPoints[0].x, greenPoints[0].y);
-    for (let i = 1; i < greenPoints.length; i++) {
-      ctx.lineTo(greenPoints[i].x, greenPoints[i].y);
+      if (i === 0) ctx.moveTo(proj.x, proj.y);
+      else ctx.lineTo(proj.x, proj.y);
     }
     ctx.closePath();
     ctx.stroke();
 
-    // Info rotazione
+    // Info
     ctx.fillStyle = '#333';
     ctx.font = '14px monospace';
     ctx.fillText(`Gialla: ${rotationYellow.toFixed(0)}°  Verde: ${rotationGreen.toFixed(0)}°`, 10, 20);

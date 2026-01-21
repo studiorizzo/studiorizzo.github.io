@@ -80,8 +80,8 @@ const CALENDAR_HEADER_COLORS = {
 // ============================================
 class MobiusStrip {
   constructor() {
-    this.uSegments = 60;  // Segments around the loop
-    this.vSegments = 6;   // Rows across the width (like reference image)
+    this.uSegments = 40;  // Segments around the loop
+    this.vSegments = 5;   // Rows across width (like reference image)
   }
 
   // Parametric Möbius strip
@@ -189,22 +189,24 @@ class MobiusRenderer {
     const totalDays = days.length;
     if (totalDays === 0) return;
 
-    // Calculate dimensions to FILL the page width
-    const padding = 20;
-    const pageWidth = this.width - padding * 2;
-    const pageHeight = this.height - padding * 2;
+    // Calculate dimensions to fit within page like reference image
+    const padding = 40;
+    const availableWidth = this.width - padding * 2;
+    const availableHeight = this.height - padding * 2;
 
-    // R must be large enough that the strip touches the edges
-    // Projected width ≈ 2*R, so R ≈ pageWidth/2
-    const R = pageWidth * 0.45;
-    const w = R * 0.9;  // THICK ribbon like reference image
+    // The strip must FIT inside the viewport
+    // Reference image: strip fills ~90% of width, ~70% of height
+    // With tiltX ~1.0, vertical extent ≈ R + w (front) and the back is foreshortened
+    const maxR = Math.min(availableWidth / 2.2, availableHeight / 1.8);
+    const R = maxR;
+    const w = R * 0.65;  // Strip width - thick but not too thick
     const centerX = this.width / 2;
     const centerY = this.height / 2;
-    const perspective = pageWidth * 2;
-    const tiltX = 1.0;  // View from above like reference image
+    const perspective = Math.max(availableWidth, availableHeight) * 1.5;
+    const tiltX = 0.95;  // Slight tilt from above like reference
 
-    // Fixed number of segments for smooth strip
-    this.mobius.uSegments = 48;
+    // Segments around the loop - enough for smooth curve
+    this.mobius.uSegments = 40;
 
     // Generate fixed mesh
     const mesh = this.mobius.generateMesh(R, w, centerX, centerY, perspective, tiltX);

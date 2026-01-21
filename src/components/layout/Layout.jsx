@@ -19,8 +19,8 @@ function Layout({ children }) {
   // Variante-2 è una pagina fullscreen senza header
   const isFullscreenPage = location.pathname.includes('variante-2')
 
-  // Applica sfondo tematizzato su calendario-canvas-light, variante-1 e variante-2
-  const isThemedPage = location.pathname.includes('calendario-canvas-light') || location.pathname.includes('variante-1') || location.pathname.includes('variante-2')
+  // Applica sfondo tematizzato su calendario-canvas-light e variante-1 (non variante-2)
+  const isThemedPage = location.pathname.includes('calendario-canvas-light') || location.pathname.includes('variante-1')
   const backgroundColor = isThemedPage ? PAGE_COLORS[mode] : '#ffffff'
 
   const btnBg = mode === 'dark' ? '#0E1416' : '#F5FAFC'

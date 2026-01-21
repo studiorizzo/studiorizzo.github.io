@@ -41,27 +41,27 @@ export default function CalendarVariant2() {
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, W, H);
 
-    // Raggio = H (cerchi grandi che si sovrappongono come in immagine 2)
-    const radius = H;
+    // Diametro = H, raggio = H/2
+    const radius = H / 2;
 
     ctx.globalAlpha = 0.5;
 
-    // Cerchio A giallo a SINISTRA - bordo sinistro a x=0, centro a x=radius
+    // Cerchio A giallo a SINISTRA - centro a W/3 per garantire sovrapposizione
     ctx.fillStyle = 'yellow';
     ctx.beginPath();
-    ctx.arc(radius, H / 2, radius, 0, Math.PI * 2);
+    ctx.arc(W / 3, H / 2, radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // Cerchio B verde a DESTRA - bordo destro a x=W, centro a x=W-radius
+    // Cerchio B verde a DESTRA - centro a 2W/3
     ctx.fillStyle = 'green';
     ctx.beginPath();
-    ctx.arc(W - radius, H / 2, radius, 0, Math.PI * 2);
+    ctx.arc(2 * W / 3, H / 2, radius, 0, Math.PI * 2);
     ctx.fill();
 
     // Rettangolo rosso sul diametro del cerchio A
-    // Diametro orizzontale da x=0 a x=2*radius, y=H/2
     ctx.fillStyle = 'red';
-    ctx.fillRect(0, H / 2, radius * 2, H / 2);
+    const rectX = W / 3 - radius;
+    ctx.fillRect(rectX, H / 2, radius * 2, H / 2);
 
   }, [size, bgColor]);
 

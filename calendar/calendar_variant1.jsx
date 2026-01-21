@@ -7,12 +7,12 @@ const BASE_CONFIG = {
   padding: 0,
   headerHeight: 30,
   animationSpeed: 0.08,
-  // Parametri per deformazione (attualmente disabilitati)
-  gravityStrength: 0,
+  // Parametri per deformazione avanzata
+  gravityStrength: 0.3,
   gravityRadius: 2.5,
   localFalloff: 0.6,
-  borderElasticity: 0,
-  curvature: 0,
+  borderElasticity: 0.2,
+  curvature: 0.3,
 };
 
 const PAYMENT_TYPES = {

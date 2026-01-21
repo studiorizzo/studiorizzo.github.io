@@ -201,11 +201,11 @@ class MobiusRenderer {
     const totalDays = days.length;
     if (totalDays === 0) return;
 
-    // Calculate dimensions
+    // Calculate dimensions - fill the page
     const padding = 16;
     const availableSize = Math.min(this.width - padding * 2, this.height - padding * 2);
-    const R = availableSize * 0.35;  // Main radius
-    const w = R * 0.55;              // Strip width
+    const R = availableSize * 0.42;  // Main radius - larger to fill page
+    const w = R * 0.6;               // Strip width
     const centerX = this.width / 2;
     const centerY = this.height / 2;
     const perspective = availableSize * 1.5;
@@ -288,10 +288,9 @@ class MobiusRenderer {
     ctx.strokeStyle = cc.gridLine;
     ctx.lineWidth = 1;
 
-    // Collect all lines with their average Z for sorting
+    // Collect vertical lines (day separators only)
     const lines = [];
 
-    // Vertical lines (day separators)
     for (let i = 0; i <= totalDays; i++) {
       const idx = i % totalDays;
       const line = [];
@@ -302,20 +301,7 @@ class MobiusRenderer {
         avgZ += p.z;
       }
       avgZ /= line.length;
-      lines.push({ points: line, avgZ, type: 'v' });
-    }
-
-    // Horizontal lines (across width)
-    for (let j = 0; j <= this.mobius.vSegments; j++) {
-      const line = [];
-      let avgZ = 0;
-      for (let i = 0; i <= totalDays; i++) {
-        const p = mesh[i][j];
-        line.push(p);
-        avgZ += p.z;
-      }
-      avgZ /= line.length;
-      lines.push({ points: line, avgZ, type: 'h' });
+      lines.push({ points: line, avgZ });
     }
 
     // Sort by depth
@@ -478,8 +464,8 @@ export default function CalendarVariant2() {
     // Store mesh for hit testing
     const padding = 16;
     const availableSize = Math.min(canvasSize.width - padding * 2, canvasSize.height - padding * 2);
-    const R = availableSize * 0.35;
-    const w = R * 0.55;
+    const R = availableSize * 0.42;
+    const w = R * 0.6;
     meshRef.current = mobiusRef.current.generateMesh(R, w, canvasSize.width / 2, canvasSize.height / 2, availableSize * 1.5, 0.5);
   }, [canvasSize, days, eventsByDate, hoveredDay, colors, cellColors]);
 
@@ -503,8 +489,8 @@ export default function CalendarVariant2() {
       // Update mesh ref
       const padding = 16;
       const availableSize = Math.min(canvasSize.width - padding * 2, canvasSize.height - padding * 2);
-      const R = availableSize * 0.35;
-      const w = R * 0.55;
+      const R = availableSize * 0.42;
+      const w = R * 0.6;
       meshRef.current = mobiusRef.current.generateMesh(R, w, canvasSize.width / 2, canvasSize.height / 2, availableSize * 1.5, 0.5);
     } else {
       const rect = canvasRef.current.getBoundingClientRect();

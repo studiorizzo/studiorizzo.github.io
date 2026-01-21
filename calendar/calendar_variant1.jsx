@@ -727,14 +727,10 @@ class AdvancedCalendarRenderer {
     }
     ctx.fill();
 
-    // Bordo
+    // Bordo solo per celle con eventi (la griglia definisce i bordi normali)
     if (hasEvents) {
       ctx.strokeStyle = color + (isHovered ? 'cc' : '88');
       ctx.lineWidth = 2;
-      ctx.stroke();
-    } else if (isHovered && day.isCurrentMonth) {
-      ctx.strokeStyle = c.outline;
-      ctx.lineWidth = 1;
       ctx.stroke();
     }
   }

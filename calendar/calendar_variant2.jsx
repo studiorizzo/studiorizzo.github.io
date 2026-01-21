@@ -108,12 +108,25 @@ export default function CalendarVariant2() {
       z: R * Math.sin(t)
     });
 
-    // Superficie di Seifert: interpolazione tra i due cerchi
+    // Superficie di Seifert per l'Hopf link: ANNULUS CON TORSIONE DI 180°
+    //
+    // Secondo l'algoritmo di Seifert, la banda che connette i due cerchi
+    // deve avere UNA MEZZA TORSIONE (180°) - questa è la caratteristica
+    // fondamentale della Hopf band.
+    //
     // u: parametro angolare (0 a 2π)
     // v: posizione sulla banda (0 = verde, 1 = rosso)
+    //
+    // La TORSIONE si ottiene aggiungendo un offset angolare π*v al cerchio rosso:
+    // quando v va da 0 a 1, l'angolo sul cerchio rosso ruota di π (180°)
+    //
     const getSeifertPoint = (u, v) => {
       const green = getGreenCircle(u);
-      const red = getRedCircle(u);
+
+      // TWIST: il punto sul cerchio rosso è sfasato di π*v
+      // Questo crea la mezza torsione caratteristica della superficie di Seifert
+      const twist = v * Math.PI;
+      const red = getRedCircle(u + twist);
 
       return {
         x: green.x * (1 - v) + red.x * v,
@@ -225,7 +238,8 @@ export default function CalendarVariant2() {
     // Info
     ctx.fillStyle = '#333';
     ctx.font = '14px monospace';
-    ctx.fillText('Trascina per ruotare la vista', 10, 20);
+    ctx.fillText('Hopf Link con Superficie di Seifert (torsione 180°)', 10, 20);
+    ctx.fillText('Trascina per ruotare la vista', 10, 38);
 
   }, [size, bgColor, viewAngleX, viewAngleY]);
 

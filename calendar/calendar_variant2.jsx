@@ -5,12 +5,12 @@ const BASE_CONFIG = {
   cols: 7,
   rows: 6,
   headerHeight: 40,
-  // Parametri Möbius strip
-  radius: 180,        // Raggio del nastro
-  stripWidth: 120,    // Larghezza del nastro
-  twists: 0.5,        // Numero di mezzi giri (0.5 = Möbius classico)
-  perspective: 800,   // Distanza focale prospettiva
-  autoRotateSpeed: 0.005,
+  // Parametri nastro curvo con twist
+  bendAngle: Math.PI * 0.8,  // Quanto si curva il nastro (non un loop completo)
+  twistAngle: Math.PI * 0.5, // Mezzo giro di twist (Möbius)
+  radius: 350,               // Raggio della curva
+  perspective: 1000,
+  autoRotateSpeed: 0.002,
 };
 
 const PAYMENT_TYPES = {
@@ -116,7 +116,6 @@ const CALENDAR_HEADER_COLORS = {
   },
 };
 
-// Colori celle
 const CELL_COLORS = {
   light: {
     standard: { notCurrentMonth: '#e3e9eb', checker1: '#eff5f6', checker2: '#e9eff0', hover: '#d5dbdd' },
@@ -131,22 +130,26 @@ const CELL_COLORS = {
 };
 
 // ============================================
-// MÖBIUS STRIP GEOMETRY
+// TWISTED RIBBON GEOMETRY
 // ============================================
-class MobiusStrip {
+class TwistedRibbon {
   constructor(config) {
     this.config = config;
+    this.bendAngle = config.bendAngle;
+    this.twistAngle = config.twistAngle;
     this.radius = config.radius;
-    this.width = config.stripWidth;
-    this.twists = config.twists;
     this.perspective = config.perspective;
 
-    // Rotazione 3D
-    this.rotationX = 0.3;  // Inclinazione iniziale
-    this.rotationY = 0;
-    this.rotationZ = 0;
+    // Dimensioni griglia
+    this.cellWidth = 70;
+    this.cellHeight = 55;
+    this.gridWidth = this.cellWidth * 7;
+    this.gridHeight = this.cellHeight * 6;
 
-    // Centro del canvas
+    // Rotazione camera
+    this.rotationX = 0.2;
+    this.rotationY = 0;
+
     this.centerX = 0;
     this.centerY = 0;
   }
@@ -156,29 +159,33 @@ class MobiusStrip {
     this.centerY = y;
   }
 
-  setRotation(x, y, z) {
-    this.rotationX = x;
-    this.rotationY = y;
-    this.rotationZ = z;
-  }
+  // Trasforma punto 2D griglia -> 3D nastro curvo con twist
+  gridTo3D(gridX, gridY) {
+    // Normalizza posizione sulla griglia (0-1)
+    const u = gridX / this.gridWidth;  // 0 = sinistra, 1 = destra
+    const v = gridY / this.gridHeight; // 0 = top, 1 = bottom
 
-  // Calcola punto 3D sulla superficie di Möbius
-  // u: 0 to 2π (intorno al nastro)
-  // v: -1 to 1 (attraverso la larghezza)
-  getPoint3D(u, v) {
-    const R = this.radius;
-    const w = this.width / 2;
-    const halfTwist = Math.PI * this.twists;
+    // Angolo lungo la curva del nastro (basato sulla posizione orizzontale)
+    const angle = (u - 0.5) * this.bendAngle;
 
-    // Equazioni parametriche del nastro di Möbius
-    const x = (R + w * v * Math.cos(halfTwist * u / Math.PI)) * Math.cos(u);
-    const y = (R + w * v * Math.cos(halfTwist * u / Math.PI)) * Math.sin(u);
-    const z = w * v * Math.sin(halfTwist * u / Math.PI);
+    // Twist progressivo lungo la larghezza
+    const twist = (u - 0.5) * this.twistAngle;
+
+    // Posizione verticale sulla strip (centrata)
+    const localY = (v - 0.5) * this.gridHeight;
+
+    // Applica twist alla posizione Y
+    const twistedY = localY * Math.cos(twist);
+    const twistedZ = localY * Math.sin(twist);
+
+    // Curva il nastro
+    const x = Math.sin(angle) * this.radius;
+    const z = (Math.cos(angle) - 1) * this.radius + twistedZ;
+    const y = twistedY;
 
     return { x, y, z };
   }
 
-  // Rotazione 3D
   rotate3D(point) {
     let { x, y, z } = point;
 
@@ -198,18 +205,9 @@ class MobiusStrip {
     x = x1;
     z = z2;
 
-    // Rotazione Z
-    const cosZ = Math.cos(this.rotationZ);
-    const sinZ = Math.sin(this.rotationZ);
-    const x2 = x * cosZ - y * sinZ;
-    const y2 = x * sinZ + y * cosZ;
-    x = x2;
-    y = y2;
-
     return { x, y, z };
   }
 
-  // Proiezione prospettica 3D -> 2D
   project(point3D) {
     const rotated = this.rotate3D(point3D);
     const scale = this.perspective / (this.perspective + rotated.z);
@@ -218,26 +216,23 @@ class MobiusStrip {
       x: this.centerX + rotated.x * scale,
       y: this.centerY + rotated.y * scale,
       z: rotated.z,
-      scale: scale,
+      scale,
     };
   }
 
-  // Ottieni i 4 vertici di una cella sulla strip
-  getCellVertices(row, col, rows, cols) {
-    // Mappa riga -> posizione lungo il nastro (u)
-    // Mappa colonna -> posizione attraverso il nastro (v)
-    const u1 = (row / rows) * Math.PI * 2;
-    const u2 = ((row + 1) / rows) * Math.PI * 2;
-    const v1 = (col / cols) * 2 - 1;  // da -1 a 1
-    const v2 = ((col + 1) / cols) * 2 - 1;
+  getCellVertices(row, col) {
+    const x1 = col * this.cellWidth;
+    const x2 = (col + 1) * this.cellWidth;
+    const y1 = row * this.cellHeight;
+    const y2 = (row + 1) * this.cellHeight;
 
-    const p1 = this.project(this.getPoint3D(u1, v1));
-    const p2 = this.project(this.getPoint3D(u1, v2));
-    const p3 = this.project(this.getPoint3D(u2, v2));
-    const p4 = this.project(this.getPoint3D(u2, v1));
+    const p1 = this.project(this.gridTo3D(x1, y1)); // top-left
+    const p2 = this.project(this.gridTo3D(x2, y1)); // top-right
+    const p3 = this.project(this.gridTo3D(x2, y2)); // bottom-right
+    const p4 = this.project(this.gridTo3D(x1, y2)); // bottom-left
 
-    // Z medio per ordinamento
     const avgZ = (p1.z + p2.z + p3.z + p4.z) / 4;
+    const avgScale = (p1.scale + p2.scale + p3.scale + p4.scale) / 4;
 
     return {
       topLeft: p1,
@@ -245,56 +240,73 @@ class MobiusStrip {
       bottomRight: p3,
       bottomLeft: p4,
       avgZ,
-      avgScale: (p1.scale + p2.scale + p3.scale + p4.scale) / 4,
+      avgScale,
     };
   }
 
-  // Calcola normale per illuminazione
-  getNormal(row, col, rows, cols) {
-    const u = ((row + 0.5) / rows) * Math.PI * 2;
-    const v = ((col + 0.5) / cols) * 2 - 1;
+  // Calcola normale per lighting
+  getNormal(row, col) {
+    const cx = (col + 0.5) * this.cellWidth;
+    const cy = (row + 0.5) * this.cellHeight;
 
-    const epsilon = 0.01;
-    const p0 = this.getPoint3D(u, v);
-    const pu = this.getPoint3D(u + epsilon, v);
-    const pv = this.getPoint3D(u, v + epsilon);
+    const eps = 2;
+    const p0 = this.gridTo3D(cx, cy);
+    const px = this.gridTo3D(cx + eps, cy);
+    const py = this.gridTo3D(cx, cy + eps);
 
-    // Vettori tangenti
-    const tu = { x: pu.x - p0.x, y: pu.y - p0.y, z: pu.z - p0.z };
-    const tv = { x: pv.x - p0.x, y: pv.y - p0.y, z: pv.z - p0.z };
+    const tu = { x: px.x - p0.x, y: px.y - p0.y, z: px.z - p0.z };
+    const tv = { x: py.x - p0.x, y: py.y - p0.y, z: py.z - p0.z };
 
-    // Prodotto vettoriale per normale
     const normal = {
       x: tu.y * tv.z - tu.z * tv.y,
       y: tu.z * tv.x - tu.x * tv.z,
       z: tu.x * tv.y - tu.y * tv.x,
     };
 
-    // Normalizza
-    const len = Math.sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+    const len = Math.sqrt(normal.x ** 2 + normal.y ** 2 + normal.z ** 2) || 1;
     normal.x /= len;
     normal.y /= len;
     normal.z /= len;
 
-    // Ruota normale
     const rotated = this.rotate3D(normal);
+    // Lighting: quanto la faccia guarda verso la camera (z positivo)
+    return Math.max(0.4, Math.min(1, 0.5 + rotated.z * 0.5));
+  }
 
-    // Illuminazione: dot product con luce frontale
-    return Math.max(0.3, rotated.z);
+  // Controlla se la cella è visibile (faccia verso la camera)
+  isFacingCamera(row, col) {
+    const cx = (col + 0.5) * this.cellWidth;
+    const cy = (row + 0.5) * this.cellHeight;
+
+    const eps = 2;
+    const p0 = this.gridTo3D(cx, cy);
+    const px = this.gridTo3D(cx + eps, cy);
+    const py = this.gridTo3D(cx, cy + eps);
+
+    const tu = { x: px.x - p0.x, y: px.y - p0.y, z: px.z - p0.z };
+    const tv = { x: py.x - p0.x, y: py.y - p0.y, z: py.z - p0.z };
+
+    const normal = {
+      x: tu.y * tv.z - tu.z * tv.y,
+      y: tu.z * tv.x - tu.x * tv.z,
+      z: tu.x * tv.y - tu.y * tv.x,
+    };
+
+    const rotated = this.rotate3D(normal);
+    return rotated.z > -0.3; // Mostra anche celle leggermente di lato
   }
 }
 
 // ============================================
-// MÖBIUS CALENDAR RENDERER
+// RENDERER
 // ============================================
-class MobiusCalendarRenderer {
-  constructor(canvas, mobius, colors, cellColors) {
+class TwistedCalendarRenderer {
+  constructor(canvas, ribbon, colors, cellColors) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
-    this.mobius = mobius;
+    this.ribbon = ribbon;
     this.colors = colors;
     this.cellColors = cellColors;
-    this.setupCanvas();
   }
 
   setColors(colors, cellColors) {
@@ -302,49 +314,50 @@ class MobiusCalendarRenderer {
     this.cellColors = cellColors;
   }
 
-  setupCanvas() {
+  setupCanvas(width, height) {
     const dpr = window.devicePixelRatio || 1;
-    const rect = this.canvas.getBoundingClientRect();
-    this.canvas.width = rect.width * dpr;
-    this.canvas.height = rect.height * dpr;
+    this.canvas.width = width * dpr;
+    this.canvas.height = height * dpr;
+    this.canvas.style.width = width + 'px';
+    this.canvas.style.height = height + 'px';
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.scale(dpr, dpr);
-
-    // Aggiorna centro
-    this.mobius.setCenter(rect.width / 2, rect.height / 2);
+    this.ribbon.setCenter(width / 2, height / 2);
   }
 
   render(calendarDays, eventsByDate, hoveredCell) {
     const ctx = this.ctx;
-    const rect = this.canvas.getBoundingClientRect();
+    const width = this.canvas.width / (window.devicePixelRatio || 1);
+    const height = this.canvas.height / (window.devicePixelRatio || 1);
     const c = this.colors;
-    const rows = 6;
-    const cols = 7;
 
     // Sfondo
     ctx.fillStyle = c.background;
-    ctx.fillRect(0, 0, rect.width, rect.height);
+    ctx.fillRect(0, 0, width, height);
 
-    // Raccogli celle con profondità per ordinamento
+    // Raccogli tutte le celle
     const cells = [];
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const idx = row * cols + col;
-        const vertices = this.mobius.getCellVertices(row, col, rows, cols);
-        const lighting = this.mobius.getNormal(row, col, rows, cols);
+    for (let row = 0; row < 6; row++) {
+      for (let col = 0; col < 7; col++) {
+        const idx = row * 7 + col;
+        const vertices = this.ribbon.getCellVertices(row, col);
+        const lighting = this.ribbon.getNormal(row, col);
+        const visible = this.ribbon.isFacingCamera(row, col);
+
         cells.push({
           idx,
           row,
           col,
           vertices,
           lighting,
+          visible,
           day: calendarDays[idx],
           events: eventsByDate[calendarDays[idx]?.date?.toDateString()] || [],
         });
       }
     }
 
-    // Ordina per profondità (back to front)
+    // Ordina back-to-front
     cells.sort((a, b) => a.vertices.avgZ - b.vertices.avgZ);
 
     // Disegna celle
@@ -352,13 +365,13 @@ class MobiusCalendarRenderer {
       this.drawCell(cell, cell.idx === hoveredCell);
     });
 
-    // Disegna etichette giorni della settimana sulla strip
-    this.drawWeekdayLabels(rows, cols);
+    // Disegna header giorni settimana
+    this.drawWeekdayHeaders();
   }
 
   drawCell(cell, isHovered) {
     const ctx = this.ctx;
-    const { vertices, lighting, day, events, row, col } = cell;
+    const { vertices, lighting, visible, day, events, row, col } = cell;
     const c = this.colors;
     const cc = this.cellColors;
     const hasEvents = events.length > 0 && day?.isCurrentMonth;
@@ -374,37 +387,38 @@ class MobiusCalendarRenderer {
     ctx.lineTo(vertices.bottomLeft.x, vertices.bottomLeft.y);
     ctx.closePath();
 
-    // Colore base con illuminazione
+    // Colore base
     let baseColor;
     if (!day?.isCurrentMonth) {
       baseColor = cc.notCurrentMonth;
-    } else if (isHovered) {
+    } else if (isHovered && visible) {
       baseColor = cc.hover;
     } else if (hasEvents) {
-      baseColor = PAYMENT_TYPES[events[0].type]?.color + '30';
+      baseColor = PAYMENT_TYPES[events[0].type]?.color + '25';
     } else {
       baseColor = isEven ? cc.checker1 : cc.checker2;
     }
 
-    // Applica illuminazione
     ctx.fillStyle = this.applyLighting(baseColor, lighting);
     ctx.fill();
 
     // Bordo
-    ctx.strokeStyle = hasEvents
-      ? PAYMENT_TYPES[events[0].type]?.color + (isHovered ? 'cc' : '88')
-      : c.outlineVariant + '60';
-    ctx.lineWidth = hasEvents ? 2 : 1;
+    if (hasEvents) {
+      ctx.strokeStyle = PAYMENT_TYPES[events[0].type]?.color + (isHovered ? 'cc' : '88');
+      ctx.lineWidth = 2;
+    } else {
+      ctx.strokeStyle = c.outlineVariant + '50';
+      ctx.lineWidth = 1;
+    }
     ctx.stroke();
 
-    // Contenuto cella
-    if (day && vertices.avgScale > 0.3) {
+    // Contenuto solo se visibile
+    if (visible && day && vertices.avgScale > 0.3) {
       this.drawCellContent(cell, vertices);
     }
   }
 
   applyLighting(color, lighting) {
-    // Converti hex in RGB, applica illuminazione
     const hex = color.replace('#', '');
     let r, g, b, a = 1;
 
@@ -438,8 +452,7 @@ class MobiusCalendarRenderer {
     const cx = (vertices.topLeft.x + vertices.topRight.x + vertices.bottomLeft.x + vertices.bottomRight.x) / 4;
     const cy = (vertices.topLeft.y + vertices.topRight.y + vertices.bottomLeft.y + vertices.bottomRight.y) / 4;
 
-    // Scala basata sulla prospettiva
-    const scale = Math.min(vertices.avgScale, 1.2);
+    const scale = Math.min(vertices.avgScale, 1.1);
 
     if (!day.isCurrentMonth) ctx.globalAlpha = 0.4;
 
@@ -449,11 +462,11 @@ class MobiusCalendarRenderer {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const dayY = hasEvents ? cy - 10 * scale : cy;
+    const dayY = hasEvents ? cy - 8 * scale : cy;
     ctx.fillText(day.day.toString(), cx, dayY);
 
     // Eventi
-    if (hasEvents && scale > 0.5) {
+    if (hasEvents && scale > 0.6) {
       const event = events[0];
       const evColor = PAYMENT_TYPES[event.type]?.color || c.primary;
       const amount = event.amount >= 1000
@@ -466,31 +479,32 @@ class MobiusCalendarRenderer {
 
       if (events.length > 1) {
         ctx.fillStyle = c.onSurfaceVariant;
-        ctx.fillText(`+${events.length - 1}`, cx, cy + 22 * scale);
+        ctx.fillText(`+${events.length - 1}`, cx, cy + 20 * scale);
       }
     }
 
     ctx.globalAlpha = 1;
   }
 
-  drawWeekdayLabels(rows, cols) {
+  drawWeekdayHeaders() {
     const ctx = this.ctx;
     const c = this.colors;
+    const ribbon = this.ribbon;
 
-    // Disegna etichette al centro di ogni colonna sulla prima riga visibile
     ctx.font = "600 11px 'Orbitron', sans-serif";
-    ctx.fillStyle = c.primary;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    for (let col = 0; col < cols; col++) {
-      // Prendi punto centrale del primo row per questa colonna
-      const vertices = this.mobius.getCellVertices(0, col, rows, cols);
-      const cx = (vertices.topLeft.x + vertices.topRight.x) / 2;
-      const cy = (vertices.topLeft.y + vertices.topRight.y) / 2 - 15 * vertices.avgScale;
+    for (let col = 0; col < 7; col++) {
+      const vertices = ribbon.getCellVertices(0, col);
+      const visible = ribbon.isFacingCamera(0, col);
 
-      if (vertices.avgScale > 0.4) {
+      if (visible && vertices.avgScale > 0.4) {
+        const cx = (vertices.topLeft.x + vertices.topRight.x) / 2;
+        const cy = (vertices.topLeft.y + vertices.topRight.y) / 2 - 12 * vertices.avgScale;
+
         ctx.globalAlpha = Math.min(1, vertices.avgScale);
+        ctx.fillStyle = c.primary;
         ctx.fillText(WEEKDAYS[col], cx, cy);
         ctx.globalAlpha = 1;
       }
@@ -498,20 +512,20 @@ class MobiusCalendarRenderer {
   }
 
   hitTest(px, py, calendarDays) {
-    const rows = 6;
-    const cols = 7;
-
-    // Testa celle dal più vicino al più lontano
     const cells = [];
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const idx = row * cols + col;
-        const vertices = this.mobius.getCellVertices(row, col, rows, cols);
-        cells.push({ idx, vertices });
+
+    for (let row = 0; row < 6; row++) {
+      for (let col = 0; col < 7; col++) {
+        const idx = row * 7 + col;
+        const vertices = this.ribbon.getCellVertices(row, col);
+        const visible = this.ribbon.isFacingCamera(row, col);
+        if (visible) {
+          cells.push({ idx, vertices });
+        }
       }
     }
 
-    // Ordina front to back per hit test
+    // Front to back per hit test
     cells.sort((a, b) => b.vertices.avgZ - a.vertices.avgZ);
 
     for (const cell of cells) {
@@ -524,7 +538,6 @@ class MobiusCalendarRenderer {
   }
 
   pointInQuad(px, py, v) {
-    // Test punto in quadrilatero usando cross products
     const points = [
       { x: v.topLeft.x, y: v.topLeft.y },
       { x: v.topRight.x, y: v.topRight.y },
@@ -559,7 +572,7 @@ export default function CalendarVariant2() {
 
   const canvasWrapperRef = useRef(null);
   const canvasRef = useRef(null);
-  const mobiusRef = useRef(null);
+  const ribbonRef = useRef(null);
   const rendererRef = useRef(null);
   const rafRef = useRef(null);
   const dataRef = useRef({ calendarDays: [], eventsByDate: {}, hoveredCell: -1 });
@@ -577,7 +590,6 @@ export default function CalendarVariant2() {
   const [modalType, setModalType] = useState('altro');
   const [modalAmount, setModalAmount] = useState('');
 
-  // Aggiorna colori renderer
   useEffect(() => {
     if (rendererRef.current) {
       rendererRef.current.setColors(colors, cellColors);
@@ -641,7 +653,6 @@ export default function CalendarVariant2() {
     dataRef.current = { calendarDays, eventsByDate, hoveredCell };
   }, [calendarDays, eventsByDate, hoveredCell]);
 
-  // Resize observer
   useEffect(() => {
     if (!canvasWrapperRef.current) return;
 
@@ -659,23 +670,20 @@ export default function CalendarVariant2() {
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Setup e animazione
   useEffect(() => {
     if (!canvasRef.current || canvasSize.width === 0) return;
 
-    const config = { ...BASE_CONFIG };
-
-    if (!mobiusRef.current) {
-      mobiusRef.current = new MobiusStrip(config);
-      rendererRef.current = new MobiusCalendarRenderer(canvasRef.current, mobiusRef.current, colors, cellColors);
+    if (!ribbonRef.current) {
+      ribbonRef.current = new TwistedRibbon(BASE_CONFIG);
+      rendererRef.current = new TwistedCalendarRenderer(canvasRef.current, ribbonRef.current, colors, cellColors);
     }
 
-    rendererRef.current.setupCanvas();
+    rendererRef.current.setupCanvas(canvasSize.width, canvasSize.height);
 
     if (!rafRef.current) {
       const animate = () => {
         if (autoRotate && !isDragging) {
-          mobiusRef.current.rotationY += BASE_CONFIG.autoRotateSpeed;
+          ribbonRef.current.rotationY += BASE_CONFIG.autoRotateSpeed;
         }
 
         const { calendarDays, eventsByDate, hoveredCell } = dataRef.current;
@@ -693,25 +701,24 @@ export default function CalendarVariant2() {
     };
   }, [canvasSize, colors, cellColors, autoRotate, isDragging]);
 
-  // Mouse handlers per rotazione
   const handleMouseDown = useCallback((e) => {
     setIsDragging(true);
     dragRef.current = {
       startX: e.clientX,
       startY: e.clientY,
-      startRotX: mobiusRef.current?.rotationX || 0,
-      startRotY: mobiusRef.current?.rotationY || 0,
+      startRotX: ribbonRef.current?.rotationX || 0,
+      startRotY: ribbonRef.current?.rotationY || 0,
     };
   }, []);
 
   const handleMouseMove = useCallback((e) => {
-    if (!mobiusRef.current || !canvasRef.current) return;
+    if (!ribbonRef.current || !canvasRef.current) return;
 
     if (isDragging) {
       const dx = e.clientX - dragRef.current.startX;
       const dy = e.clientY - dragRef.current.startY;
-      mobiusRef.current.rotationY = dragRef.current.startRotY + dx * 0.01;
-      mobiusRef.current.rotationX = dragRef.current.startRotX + dy * 0.01;
+      ribbonRef.current.rotationY = dragRef.current.startRotY + dx * 0.005;
+      ribbonRef.current.rotationX = Math.max(-0.5, Math.min(0.5, dragRef.current.startRotX + dy * 0.005));
     } else {
       const rect = canvasRef.current.getBoundingClientRect();
       const idx = rendererRef.current?.hitTest(
@@ -801,7 +808,7 @@ export default function CalendarVariant2() {
       {/* Canvas wrapper */}
       <div
         ref={canvasWrapperRef}
-        style={{ flex: 1, background: colors.background, minHeight: 400 }}
+        style={{ flex: 1, background: colors.background, minHeight: 450 }}
       >
         <canvas
           ref={canvasRef}
@@ -816,7 +823,7 @@ export default function CalendarVariant2() {
 
       {/* Istruzioni */}
       <div style={{ padding: '8px 16px', background: colors.surfaceContainer, fontSize: 12, color: colors.onSurfaceVariant, textAlign: 'center' }}>
-        Trascina per ruotare il nastro di Möbius • Click su una cella per aggiungere eventi
+        Trascina per ruotare il nastro • Click su una cella per aggiungere eventi
       </div>
 
       {/* Modal */}

@@ -310,7 +310,12 @@ class AdvancedVertexMesh {
         rowMasses.push(this.masses[idx]);
       }
       const totalRowMass = rowMasses.reduce((a, b) => a + b, 0);
-      rowWidths.push(rowMasses.map(m => (m / totalRowMass) * this.totalWidth));
+      // Se totalRowMass è 0, distribuisci equamente
+      if (totalRowMass === 0) {
+        rowWidths.push(rowMasses.map(() => this.totalWidth / this.cols));
+      } else {
+        rowWidths.push(rowMasses.map(m => (m / totalRowMass) * this.totalWidth));
+      }
     }
 
     const colHeights = [];
@@ -321,7 +326,12 @@ class AdvancedVertexMesh {
         colMasses.push(this.masses[idx]);
       }
       const totalColMass = colMasses.reduce((a, b) => a + b, 0);
-      colHeights.push(colMasses.map(m => (m / totalColMass) * this.totalHeight));
+      // Se totalColMass è 0, distribuisci equamente
+      if (totalColMass === 0) {
+        colHeights.push(colMasses.map(() => this.totalHeight / this.rows));
+      } else {
+        colHeights.push(colMasses.map(m => (m / totalColMass) * this.totalHeight));
+      }
     }
 
     // Calcola posizioni target per ogni vertice

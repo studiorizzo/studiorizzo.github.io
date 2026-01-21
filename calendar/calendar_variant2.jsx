@@ -36,6 +36,8 @@ export default function CalendarVariant2() {
     const W = size.width;
     const H = size.height;
 
+    console.log('Canvas size:', W, 'x', H, '- Aspect ratio:', (W/H).toFixed(2));
+
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, W, H);
 

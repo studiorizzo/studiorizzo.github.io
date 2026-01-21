@@ -44,25 +44,30 @@ export default function CalendarVariant2({ onMenuClick }) {
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, W, H);
 
-    const radius = H;
+    // Diametro = H, quindi raggio = H/2
+    const radius = H / 2;
 
     ctx.globalAlpha = 0.5;
+
+    // Cerchio A giallo a SINISTRA
     ctx.fillStyle = 'yellow';
     ctx.beginPath();
     ctx.arc(0, H / 2, radius, 0, Math.PI * 2);
     ctx.fill();
 
+    // Cerchio B verde a DESTRA
     ctx.fillStyle = 'green';
     ctx.beginPath();
     ctx.arc(W, H / 2, radius, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.globalAlpha = 1;
+    // Rettangolo rosso sul diametro del cerchio A (sinistra)
+    // Posizionato sul diametro (y = H/2), largo quanto il diametro, alto fino a fine pagina
     ctx.fillStyle = 'red';
-    const rectX = W - radius * 2;
-    const rectY = H / 2;
-    const rectW = radius * 2;
-    const rectH = H - rectY;
+    const rectX = 0 - radius;  // Centro cerchio A (0) - raggio
+    const rectY = H / 2;       // Sul diametro
+    const rectW = radius * 2;  // Larghezza = diametro = H
+    const rectH = H / 2;       // Alto fino a fine pagina
     ctx.fillRect(rectX, rectY, rectW, rectH);
 
   }, [size, bgColor]);

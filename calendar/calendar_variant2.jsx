@@ -1,16 +1,13 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useTheme } from '../src/context/ThemeContext';
 
-export default function CalendarVariant2({ onMenuClick }) {
+export default function CalendarVariant2() {
   const { mode } = useTheme();
   const canvasRef = useRef(null);
   const wrapperRef = useRef(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   const bgColor = mode === 'dark' ? '#0E1416' : '#F5FAFC';
-  const borderColor = mode === 'dark' ? '#3d4665' : '#d0d7de';
-  const btnBg = mode === 'dark' ? '#0E1416' : '#F5FAFC';
-  const btnColor = mode === 'dark' ? '#DEE3E5' : '#171D1E';
 
   useEffect(() => {
     if (!wrapperRef.current) return;
@@ -44,31 +41,27 @@ export default function CalendarVariant2({ onMenuClick }) {
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, W, H);
 
-    // Diametro = H, quindi raggio = H/2
-    const radius = H / 2;
+    // Raggio = H (cerchi grandi che si sovrappongono come in immagine 2)
+    const radius = H;
 
     ctx.globalAlpha = 0.5;
 
-    // Cerchio A giallo a SINISTRA
+    // Cerchio A giallo a SINISTRA - bordo sinistro a x=0, centro a x=radius
     ctx.fillStyle = 'yellow';
     ctx.beginPath();
-    ctx.arc(0, H / 2, radius, 0, Math.PI * 2);
+    ctx.arc(radius, H / 2, radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // Cerchio B verde a DESTRA
+    // Cerchio B verde a DESTRA - bordo destro a x=W, centro a x=W-radius
     ctx.fillStyle = 'green';
     ctx.beginPath();
-    ctx.arc(W, H / 2, radius, 0, Math.PI * 2);
+    ctx.arc(W - radius, H / 2, radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // Rettangolo rosso sul diametro del cerchio A (sinistra)
-    // Posizionato sul diametro (y = H/2), largo quanto il diametro, alto fino a fine pagina
+    // Rettangolo rosso sul diametro del cerchio A
+    // Diametro orizzontale da x=0 a x=2*radius, y=H/2
     ctx.fillStyle = 'red';
-    const rectX = 0 - radius;  // Centro cerchio A (0) - raggio
-    const rectY = H / 2;       // Sul diametro
-    const rectW = radius * 2;  // Larghezza = diametro = H
-    const rectH = H / 2;       // Alto fino a fine pagina
-    ctx.fillRect(rectX, rectY, rectW, rectH);
+    ctx.fillRect(0, H / 2, radius * 2, H / 2);
 
   }, [size, bgColor]);
 
@@ -80,31 +73,6 @@ export default function CalendarVariant2({ onMenuClick }) {
       overflow: 'hidden'
     }}>
       <canvas ref={canvasRef} style={{ display: 'block' }} />
-
-      <button
-        onClick={onMenuClick}
-        style={{
-          position: 'absolute',
-          top: 16,
-          left: 16,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 32,
-          height: 32,
-          padding: 0,
-          border: `1px solid ${borderColor}`,
-          borderRadius: 6,
-          backgroundColor: btnBg,
-          color: btnColor,
-          cursor: 'pointer',
-          zIndex: 10,
-        }}
-      >
-        <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
-          <path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm0 5A.75.75 0 0 1 1.75 7h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 7.75ZM1.75 12h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5Z"></path>
-        </svg>
-      </button>
     </div>
   );
 }

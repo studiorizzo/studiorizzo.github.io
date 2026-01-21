@@ -41,27 +41,28 @@ export default function CalendarVariant2() {
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, W, H);
 
-    // Diametro = H, raggio = H/2
-    const radius = H / 2;
+    // Ellissi: altezza = H, larghezza = W - H/2
+    const radiusY = H / 2;
+    const radiusX = (W - H / 2) / 2;
 
     ctx.globalAlpha = 0.5;
 
-    // Cerchio A giallo tutto a SINISTRA
+    // Ellisse A gialla tutto a SINISTRA
     ctx.fillStyle = 'yellow';
     ctx.beginPath();
-    ctx.arc(radius, H / 2, radius, 0, Math.PI * 2);
+    ctx.ellipse(radiusX, H / 2, radiusX, radiusY, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Cerchio B verde tutto a DESTRA
+    // Ellisse B verde tutto a DESTRA
     ctx.fillStyle = 'green';
     ctx.beginPath();
-    ctx.arc(W - radius, H / 2, radius, 0, Math.PI * 2);
+    ctx.ellipse(W - radiusX, H / 2, radiusX, radiusY, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Rettangolo rosso sul diametro del cerchio B (verde, a destra)
+    // Rettangolo rosso sul diametro dell'ellisse B (verde, a destra)
     ctx.fillStyle = 'red';
-    const rectX = W - radius * 2;
-    ctx.fillRect(rectX, H / 2, radius * 2, H / 2);
+    const rectX = W - radiusX * 2;
+    ctx.fillRect(rectX, H / 2, radiusX * 2, H / 2);
 
   }, [size, bgColor]);
 

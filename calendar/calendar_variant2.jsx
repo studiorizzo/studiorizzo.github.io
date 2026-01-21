@@ -127,14 +127,16 @@ export default function CalendarVariant2() {
       return rotateAroundX(x, y, z, rotationGreen);
     };
 
-    // Seifert surface: banda che connette ellisse gialla a ellisse verde
+    // Seifert surface: banda TWISTED che connette ellisse gialla a ellisse verde
     // u: parametro lungo la banda (0 -> 2π)
     // v: parametro attraverso la banda (0 = bordo giallo, 1 = bordo verde)
+    // Il twist: il punto u sulla gialla si connette al punto (u + π) sulla verde
+    // Questo crea una superficie a UN solo lato (come Möbius)
     const getSeifertPoint = (u, v) => {
-      // Punto sul bordo giallo
+      // Punto sul bordo giallo (parametro u)
       const yellow = getYellowPoint(u);
-      // Punto sul bordo verde
-      const green = getGreenPoint(u);
+      // Punto sul bordo verde SFASATO di π (mezzo giro) - questo crea il twist!
+      const green = getGreenPoint(u + Math.PI);
 
       // Interpolazione lineare tra i due bordi
       // Il centro si sposta da centerYellow a centerGreen

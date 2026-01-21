@@ -4,8 +4,8 @@ export default function CalendarVariant2() {
   const canvasRef = useRef(null);
   const wrapperRef = useRef(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const [viewAngleX, setViewAngleX] = useState(20);
-  const [viewAngleY, setViewAngleY] = useState(30);
+  const [viewAngleX, setViewAngleX] = useState(35);
+  const [viewAngleY, setViewAngleY] = useState(-50);
   const [isDragging, setIsDragging] = useState(false);
   const [lastMouse, setLastMouse] = useState({ x: 0, y: 0 });
 
@@ -84,44 +84,43 @@ export default function CalendarVariant2() {
       z: p.z
     });
 
-    // HOPF BAND: banda attorcigliata (twisted annulus) come in Wikipedia
+    // HOPF LINK: due cerchi LINKATI (uno passa attraverso l'altro)
+    // Configurazione simile a Wikipedia
     //
-    // La Hopf band è una superficie a forma di "nastro" con un mezzo-giro (half-twist)
-    // I due bordi della banda sono i due cerchi del Hopf link
-    //
-    // Parametrizzazione: toro con half-twist
-    // - R: raggio maggiore (distanza dal centro al centro del tubo)
-    // - r: raggio minore (metà larghezza della banda)
-    // - Il twist fa sì che dopo un giro completo, la banda si sia girata di 180°
+    // Cerchio verde: nel piano XY (orizzontale), centrato in origine
+    // Cerchio rosso: nel piano XZ (verticale), centrato in (1,0,0)
+    // Il cerchio rosso PASSA ATTRAVERSO il cerchio verde
 
-    const R = 1.3;  // raggio maggiore
-    const r = 0.7;  // metà larghezza della banda
+    const R = 1.0;  // raggio dei cerchi
 
-    // La Hopf band come annulus twisted
-    // u: angolo attorno al cerchio principale (0 a 2π)
-    // v: posizione sulla larghezza della banda (0 a 1)
+    // Cerchio verde: piano XY (z=0), centro (0,0,0)
+    const getGreenCircle = (t) => ({
+      x: R * Math.cos(t),
+      y: R * Math.sin(t),
+      z: 0
+    });
+
+    // Cerchio rosso: piano XZ (y=0), centro (1,0,0)
+    // Passa attraverso l'origine (dentro il verde) e attraverso (2,0,0) (fuori dal verde)
+    const getRedCircle = (t) => ({
+      x: 1 + R * Math.cos(t),
+      y: 0,
+      z: R * Math.sin(t)
+    });
+
+    // Superficie di Seifert: interpolazione tra i due cerchi
+    // u: parametro angolare (0 a 2π)
+    // v: posizione sulla banda (0 = verde, 1 = rosso)
     const getSeifertPoint = (u, v) => {
-      // v va da 0 a 1, lo mappiamo a un angolo parziale con twist
-      // La banda copre metà del "tubo" (da -π/2 a π/2) con un half-twist aggiunto
+      const green = getGreenCircle(u);
+      const red = getRedCircle(u);
 
-      const vAngle = (v - 0.5) * Math.PI;  // da -π/2 a π/2
-      const twist = u / 2;  // half-twist: ruota di π su un giro completo
-      const theta = vAngle + twist;
-
-      // Coordinate tipo toro con il twist
-      const x = (R + r * Math.cos(theta)) * Math.cos(u);
-      const y = (R + r * Math.cos(theta)) * Math.sin(u);
-      const z = r * Math.sin(theta);
-
-      return { x, y, z };
+      return {
+        x: green.x * (1 - v) + red.x * v,
+        y: green.y * (1 - v) + red.y * v,
+        z: green.z * (1 - v) + red.z * v
+      };
     };
-
-    // I cerchi di bordo (per v=0 e v=1) sono automaticamente linkati grazie al twist
-    // Cerchio verde: bordo a v=0
-    const getGreenCircle = (t) => getSeifertPoint(t, 0);
-
-    // Cerchio rosso: bordo a v=1
-    const getRedCircle = (t) => getSeifertPoint(t, 1);
 
     const stepsU = 60;
     const stepsV = 30;

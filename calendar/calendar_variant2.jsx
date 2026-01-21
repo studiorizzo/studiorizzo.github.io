@@ -76,21 +76,19 @@ const CALENDAR_HEADER_COLORS = {
 };
 
 // ============================================
-// MÖBIUS STRIP - Based on reference image
+// MÖBIUS STRIP - Fixed geometry, scrolling days
 // ============================================
 class MobiusStrip {
   constructor() {
-    this.rotationAngle = 0;
-    // Strip parameters
     this.uSegments = 60;  // Segments around the loop
-    this.vSegments = 5;   // Rows across the width (like in the image)
+    this.vSegments = 5;   // Rows across the width
   }
 
   // Parametric Möbius strip
   getPoint3D(u, v, R, w) {
     // u: 0 to 2π (around the strip)
     // v: -1 to 1 (across the width)
-    const halfTwist = Math.PI; // One half-twist for Möbius
+    const halfTwist = Math.PI;
     const twist = halfTwist * u / (2 * Math.PI);
 
     const x = (R + (w / 2) * v * Math.cos(twist)) * Math.cos(u);
@@ -100,25 +98,17 @@ class MobiusStrip {
     return { x, y, z };
   }
 
-  // Apply view rotation
-  transform(point, tiltX, rotY) {
+  // Apply view tilt (fixed, no rotation)
+  transform(point, tiltX) {
     let { x, y, z } = point;
 
-    // Tilt around X axis (for 3D view angle)
+    // Tilt around X axis (view angle from above)
     const cosX = Math.cos(tiltX);
     const sinX = Math.sin(tiltX);
     const y1 = y * cosX - z * sinX;
     const z1 = y * sinX + z * cosX;
-    y = y1; z = z1;
 
-    // Rotate around Y axis (user control)
-    const cosY = Math.cos(rotY);
-    const sinY = Math.sin(rotY);
-    const x1 = x * cosY + z * sinY;
-    const z2 = -x * sinY + z * cosY;
-    x = x1; z = z2;
-
-    return { x, y, z };
+    return { x, y: y1, z: z1 };
   }
 
   project(point3D, centerX, centerY, perspective) {
@@ -131,10 +121,9 @@ class MobiusStrip {
     };
   }
 
-  // Generate the full mesh of the strip
+  // Generate the fixed mesh of the strip
   generateMesh(R, w, centerX, centerY, perspective, tiltX) {
     const mesh = [];
-    const rotY = this.rotationAngle;
 
     for (let i = 0; i <= this.uSegments; i++) {
       const row = [];
@@ -143,7 +132,7 @@ class MobiusStrip {
       for (let j = 0; j <= this.vSegments; j++) {
         const v = (j / this.vSegments) * 2 - 1;
         const p3d = this.getPoint3D(u, v, R, w);
-        const transformed = this.transform(p3d, tiltX, rotY);
+        const transformed = this.transform(p3d, tiltX);
         const projected = this.project(transformed, centerX, centerY, perspective);
         row.push(projected);
       }
@@ -153,7 +142,6 @@ class MobiusStrip {
     return mesh;
   }
 
-  // Get cell (quad) at position
   getCell(mesh, uIndex, vIndex) {
     if (uIndex >= mesh.length - 1 || vIndex >= mesh[0].length - 1) return null;
 
@@ -190,7 +178,7 @@ class MobiusRenderer {
     this.height = height;
   }
 
-  render(days, eventsByDate, hoveredDay, colors, cellColors) {
+  render(days, eventsByDate, dayOffset, hoveredDay, colors, cellColors) {
     const ctx = this.ctx;
     const c = colors;
     const cc = cellColors;
@@ -201,66 +189,85 @@ class MobiusRenderer {
     const totalDays = days.length;
     if (totalDays === 0) return;
 
-    // Calculate dimensions - fill the page
-    const padding = 16;
-    const availableSize = Math.min(this.width - padding * 2, this.height - padding * 2);
-    const R = availableSize * 0.42;  // Main radius - larger to fill page
-    const w = R * 0.6;               // Strip width
+    // Calculate dimensions to fill page width
+    const padding = 24;
+    const pageWidth = this.width - padding * 2;
+    const pageHeight = this.height - padding * 2;
+
+    // The strip should fill the width
+    // With tiltX ~0.9, the projected width is roughly 2*R
+    // So R = pageWidth / 2
+    const R = Math.min(pageWidth * 0.48, pageHeight * 0.42);
+    const w = R * 0.7;  // Strip width ratio like in reference image
     const centerX = this.width / 2;
     const centerY = this.height / 2;
-    const perspective = availableSize * 1.5;
-    const tiltX = 0.5;  // Tilt angle for 3D view
+    const perspective = Math.max(pageWidth, pageHeight) * 1.2;
+    const tiltX = 0.85;  // View angle from above (like reference image)
 
-    // Update segments based on days
-    this.mobius.uSegments = totalDays;
+    // Fixed number of segments for smooth strip
+    this.mobius.uSegments = 48;
 
-    // Generate mesh
+    // Generate fixed mesh
     const mesh = this.mobius.generateMesh(R, w, centerX, centerY, perspective, tiltX);
+    this.lastMesh = mesh;
+    this.lastParams = { R, w, centerX, centerY, perspective, tiltX };
 
     // Collect all cells for sorting
     const cells = [];
-    for (let i = 0; i < totalDays; i++) {
+    for (let i = 0; i < this.mobius.uSegments; i++) {
       for (let j = 0; j < this.mobius.vSegments; j++) {
         const cell = this.mobius.getCell(mesh, i, j);
         if (cell) {
+          // Map mesh position to day with offset
+          const dayIndex = Math.floor((i / this.mobius.uSegments) * totalDays + dayOffset) % totalDays;
+          const actualDayIndex = dayIndex < 0 ? dayIndex + totalDays : dayIndex;
+
           cells.push({
-            uIndex: i,
+            meshIndex: i,
             vIndex: j,
             cell,
-            day: days[i],
-            events: eventsByDate[days[i]?.date?.toDateString()] || [],
+            dayIndex: actualDayIndex,
+            day: days[actualDayIndex],
+            events: eventsByDate[days[actualDayIndex]?.date?.toDateString()] || [],
           });
         }
       }
     }
 
-    // Sort back to front
+    // Sort back to front (painter's algorithm)
     cells.sort((a, b) => a.cell.avgZ - b.cell.avgZ);
 
-    // Draw cells
+    // Draw cells - pure checkerboard, no lighting
     cells.forEach(item => {
-      this.drawCell(item, item.uIndex === hoveredDay, cc, c);
+      this.drawCell(item, item.dayIndex === hoveredDay, cc, c);
     });
 
-    // Draw grid lines
-    this.drawGridLines(mesh, totalDays, cc);
+    // Draw vertical grid lines only
+    this.drawGridLines(mesh, cc);
 
-    // Draw day content (on top)
-    for (let i = 0; i < totalDays; i++) {
+    // Draw day content on visible cells
+    const drawnDays = new Set();
+    for (let i = 0; i < this.mobius.uSegments; i++) {
       const centerCell = this.mobius.getCell(mesh, i, Math.floor(this.mobius.vSegments / 2));
-      if (centerCell && centerCell.avgZ < 50) {
-        this.drawDayContent(days[i], eventsByDate[days[i]?.date?.toDateString()] || [], centerCell, c);
+      if (centerCell && centerCell.avgZ < 80) {
+        const dayIndex = Math.floor((i / this.mobius.uSegments) * totalDays + dayOffset) % totalDays;
+        const actualDayIndex = dayIndex < 0 ? dayIndex + totalDays : dayIndex;
+
+        if (!drawnDays.has(actualDayIndex)) {
+          drawnDays.add(actualDayIndex);
+          this.drawDayContent(days[actualDayIndex], eventsByDate[days[actualDayIndex]?.date?.toDateString()] || [], centerCell, c);
+        }
       }
     }
   }
 
   drawCell(item, isHovered, cc, c) {
     const ctx = this.ctx;
-    const { cell, uIndex, vIndex, events } = item;
+    const { cell, meshIndex, vIndex, events } = item;
     const hasEvents = events.length > 0;
 
-    // Checkerboard pattern
-    const isEven = (uIndex + vIndex) % 2 === 0;
+    // Pure checkerboard - no depth shading
+    const isEven = (meshIndex + vIndex) % 2 === 0;
     let fillColor = isEven ? cc.checker1 : cc.checker2;
 
     if (isHovered) {
@@ -269,9 +276,6 @@ class MobiusRenderer {
       fillColor = PAYMENT_TYPES[events[0].type]?.color + '40';
     }
 
-    // Depth-based shading (like in the reference image)
-    const depthFactor = Math.max(0.4, Math.min(1, 1 - cell.avgZ / 300));
-
     ctx.beginPath();
     ctx.moveTo(cell.topLeft.x, cell.topLeft.y);
     ctx.lineTo(cell.topRight.x, cell.topRight.y);
@@ -279,20 +283,22 @@ class MobiusRenderer {
     ctx.lineTo(cell.bottomLeft.x, cell.bottomLeft.y);
     ctx.closePath();
 
-    ctx.fillStyle = this.adjustBrightness(fillColor, depthFactor);
+    ctx.fillStyle = fillColor;
     ctx.fill();
   }
 
-  drawGridLines(mesh, totalDays, cc) {
+  drawGridLines(mesh, cc) {
     const ctx = this.ctx;
     ctx.strokeStyle = cc.gridLine;
     ctx.lineWidth = 1;
 
-    // Collect vertical lines (day separators only)
+    // Collect vertical lines only
     const lines = [];
 
-    for (let i = 0; i <= totalDays; i++) {
-      const idx = i % totalDays;
+    for (let i = 0; i <= this.mobius.uSegments; i++) {
+      const idx = i % (this.mobius.uSegments + 1);
+      if (idx >= mesh.length) continue;
+
       const line = [];
       let avgZ = 0;
       for (let j = 0; j <= this.mobius.vSegments; j++) {
@@ -307,9 +313,9 @@ class MobiusRenderer {
     // Sort by depth
     lines.sort((a, b) => a.avgZ - b.avgZ);
 
-    // Draw lines
+    // Draw lines with depth-based opacity
     lines.forEach(({ points, avgZ }) => {
-      ctx.globalAlpha = Math.max(0.2, Math.min(0.8, 0.6 - avgZ / 400));
+      ctx.globalAlpha = Math.max(0.15, Math.min(0.7, 0.5 - avgZ / 500));
       ctx.beginPath();
       ctx.moveTo(points[0].x, points[0].y);
       for (let k = 1; k < points.length; k++) {
@@ -322,64 +328,62 @@ class MobiusRenderer {
   }
 
   drawDayContent(day, events, cell, c) {
+    if (!day) return;
+
     const ctx = this.ctx;
     const hasEvents = events.length > 0;
 
     const cx = (cell.topLeft.x + cell.topRight.x + cell.bottomLeft.x + cell.bottomRight.x) / 4;
     const cy = (cell.topLeft.y + cell.topRight.y + cell.bottomLeft.y + cell.bottomRight.y) / 4;
 
-    const scale = Math.max(0.7, Math.min(1.2, cell.topLeft.scale));
-    const alpha = Math.max(0.5, Math.min(1, 0.8 - cell.avgZ / 300));
+    const scale = Math.max(0.6, Math.min(1.3, cell.topLeft.scale));
+    const alpha = Math.max(0.4, Math.min(1, 0.9 - cell.avgZ / 250));
 
     ctx.globalAlpha = alpha;
 
     // Day number
-    ctx.font = `${day.isToday ? 'bold ' : ''}${Math.round(12 * scale)}px 'Orbitron', sans-serif`;
+    ctx.font = `${day.isToday ? 'bold ' : ''}${Math.round(14 * scale)}px 'Orbitron', sans-serif`;
     ctx.fillStyle = hasEvents ? PAYMENT_TYPES[events[0]?.type]?.color : c.onSurface;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(day.day.toString(), cx, cy - (hasEvents ? 6 : 0) * scale);
+    ctx.fillText(day.day.toString(), cx, cy - (hasEvents ? 8 : 0) * scale);
 
     // Weekday
     const weekday = WEEKDAYS[day.date.getDay() === 0 ? 6 : day.date.getDay() - 1];
-    ctx.font = `500 ${Math.round(7 * scale)}px 'Orbitron', sans-serif`;
+    ctx.font = `500 ${Math.round(8 * scale)}px 'Orbitron', sans-serif`;
     ctx.fillStyle = c.onSurfaceVariant;
-    ctx.fillText(weekday, cx, cy - 16 * scale);
+    ctx.fillText(weekday, cx, cy - 20 * scale);
 
-    // Event
-    if (hasEvents && scale > 0.7) {
+    // Event amount
+    if (hasEvents && scale > 0.65) {
       const amount = events[0].amount >= 1000 ? `€${(events[0].amount/1000).toFixed(0)}k` : `€${events[0].amount}`;
-      ctx.font = `${Math.round(8 * scale)}px 'Orbitron', sans-serif`;
+      ctx.font = `${Math.round(9 * scale)}px 'Orbitron', sans-serif`;
       ctx.fillStyle = PAYMENT_TYPES[events[0].type]?.color;
-      ctx.fillText(amount, cx, cy + 8 * scale);
+      ctx.fillText(amount, cx, cy + 10 * scale);
     }
 
     ctx.globalAlpha = 1;
   }
 
-  adjustBrightness(hex, factor) {
-    const color = hex.replace('#', '');
-    const r = Math.round(parseInt(color.substr(0, 2), 16) * factor);
-    const g = Math.round(parseInt(color.substr(2, 2), 16) * factor);
-    const b = Math.round(parseInt(color.substr(4, 2), 16) * factor);
-    return `rgb(${Math.min(255, r)}, ${Math.min(255, g)}, ${Math.min(255, b)})`;
-  }
+  hitTest(px, py, days, dayOffset) {
+    if (!this.lastMesh) return -1;
 
-  hitTest(px, py, days, mesh) {
+    const mesh = this.lastMesh;
     const totalDays = days.length;
     const midV = Math.floor(this.mobius.vSegments / 2);
 
-    for (let i = 0; i < totalDays; i++) {
+    for (let i = 0; i < this.mobius.uSegments; i++) {
       const cell = this.mobius.getCell(mesh, i, midV);
-      if (!cell || cell.avgZ > 50) continue;
+      if (!cell || cell.avgZ > 80) continue;
 
       const cx = (cell.topLeft.x + cell.topRight.x + cell.bottomLeft.x + cell.bottomRight.x) / 4;
       const cy = (cell.topLeft.y + cell.topRight.y + cell.bottomLeft.y + cell.bottomRight.y) / 4;
       const dx = px - cx;
       const dy = py - cy;
 
-      if (Math.sqrt(dx * dx + dy * dy) < 25 * cell.topLeft.scale) {
-        return i;
+      if (Math.sqrt(dx * dx + dy * dy) < 30 * cell.topLeft.scale) {
+        const dayIndex = Math.floor((i / this.mobius.uSegments) * totalDays + dayOffset) % totalDays;
+        return dayIndex < 0 ? dayIndex + totalDays : dayIndex;
       }
     }
     return -1;
@@ -400,14 +404,14 @@ export default function CalendarVariant2() {
   const wrapperRef = useRef(null);
   const mobiusRef = useRef(null);
   const rendererRef = useRef(null);
-  const meshRef = useRef(null);
 
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [hoveredDay, setHoveredDay] = useState(-1);
+  const [dayOffset, setDayOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef({ x: 0, rotation: 0 });
+  const dragStartRef = useRef({ x: 0, offset: 0 });
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState(null);
@@ -459,50 +463,36 @@ export default function CalendarVariant2() {
     }
 
     rendererRef.current.setupCanvas(canvasSize.width, canvasSize.height);
-    rendererRef.current.render(days, eventsByDate, hoveredDay, colors, cellColors);
+    rendererRef.current.render(days, eventsByDate, dayOffset, hoveredDay, colors, cellColors);
+  }, [canvasSize, days, eventsByDate, dayOffset, hoveredDay, colors, cellColors]);
 
-    // Store mesh for hit testing
-    const padding = 16;
-    const availableSize = Math.min(canvasSize.width - padding * 2, canvasSize.height - padding * 2);
-    const R = availableSize * 0.42;
-    const w = R * 0.6;
-    meshRef.current = mobiusRef.current.generateMesh(R, w, canvasSize.width / 2, canvasSize.height / 2, availableSize * 1.5, 0.5);
-  }, [canvasSize, days, eventsByDate, hoveredDay, colors, cellColors]);
-
-  // Mouse handlers - DRAG to rotate
+  // Mouse handlers - DRAG to scroll days
   const handleMouseDown = useCallback((e) => {
     setIsDragging(true);
     dragStartRef.current = {
       x: e.clientX,
-      rotation: mobiusRef.current?.rotationAngle || 0,
+      offset: dayOffset,
     };
-  }, []);
+  }, [dayOffset]);
 
   const handleMouseMove = useCallback((e) => {
-    if (!mobiusRef.current || !rendererRef.current || !canvasRef.current) return;
+    if (!rendererRef.current || !canvasRef.current) return;
 
     if (isDragging) {
       const dx = e.clientX - dragStartRef.current.x;
-      mobiusRef.current.rotationAngle = dragStartRef.current.rotation + dx * 0.01;
-      rendererRef.current.render(days, eventsByDate, hoveredDay, colors, cellColors);
-
-      // Update mesh ref
-      const padding = 16;
-      const availableSize = Math.min(canvasSize.width - padding * 2, canvasSize.height - padding * 2);
-      const R = availableSize * 0.42;
-      const w = R * 0.6;
-      meshRef.current = mobiusRef.current.generateMesh(R, w, canvasSize.width / 2, canvasSize.height / 2, availableSize * 1.5, 0.5);
+      // Convert pixel drag to day offset (negative dx = scroll forward)
+      const sensitivity = days.length / (canvasSize.width * 0.8);
+      const newOffset = dragStartRef.current.offset - dx * sensitivity;
+      setDayOffset(newOffset);
     } else {
       const rect = canvasRef.current.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
 
-      if (meshRef.current) {
-        const idx = rendererRef.current.hitTest(px, py, days, meshRef.current);
-        setHoveredDay(idx);
-      }
+      const idx = rendererRef.current.hitTest(px, py, days, dayOffset);
+      setHoveredDay(idx);
     }
-  }, [isDragging, days, eventsByDate, hoveredDay, colors, cellColors, canvasSize]);
+  }, [isDragging, days, dayOffset, canvasSize.width]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -539,7 +529,7 @@ export default function CalendarVariant2() {
         />
       </div>
 
-      {/* Header inside center */}
+      {/* Header inside center hole */}
       <div style={{
         position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, pointerEvents: 'auto',
@@ -562,7 +552,7 @@ export default function CalendarVariant2() {
           </button>
         </div>
         <p style={{ margin: 0, fontSize: 11, color: colors.onSurfaceVariant, fontFamily: "'Orbitron', sans-serif" }}>
-          Trascina per ruotare
+          Trascina per scorrere i giorni
         </p>
       </div>
 

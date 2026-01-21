@@ -1034,7 +1034,7 @@ export default function CalendarVariant1() {
             value={emptyMass}
             onChange={(e) => setEmptyMass(Number(e.target.value) || 0)}
             style={{
-              width: 70,
+              width: 90,
               padding: '6px 8px',
               background: 'transparent',
               border: `1px solid ${headerColors.text}40`,

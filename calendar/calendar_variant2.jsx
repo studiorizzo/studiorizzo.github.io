@@ -59,7 +59,7 @@ export default function CalendarVariant2({ onMenuClick }) {
 
     ctx.globalAlpha = 1;
     ctx.fillStyle = 'red';
-    const rectX = W - radius * 2;
+    const rectX = W - radius;
     const rectY = H / 2;
     const rectW = radius * 2;
     const rectH = H - rectY;

@@ -81,7 +81,7 @@ const CALENDAR_HEADER_COLORS = {
 class MobiusStrip {
   constructor() {
     this.uSegments = 60;  // Segments around the loop
-    this.vSegments = 5;   // Rows across the width
+    this.vSegments = 6;   // Rows across the width (like reference image)
   }
 
   // Parametric Möbius strip
@@ -189,20 +189,19 @@ class MobiusRenderer {
     const totalDays = days.length;
     if (totalDays === 0) return;
 
-    // Calculate dimensions to fill page width
-    const padding = 24;
+    // Calculate dimensions to FILL the page width
+    const padding = 20;
     const pageWidth = this.width - padding * 2;
     const pageHeight = this.height - padding * 2;
 
-    // The strip should fill the width
-    // With tiltX ~0.9, the projected width is roughly 2*R
-    // So R = pageWidth / 2
-    const R = Math.min(pageWidth * 0.48, pageHeight * 0.42);
-    const w = R * 0.7;  // Strip width ratio like in reference image
+    // R must be large enough that the strip touches the edges
+    // Projected width ≈ 2*R, so R ≈ pageWidth/2
+    const R = pageWidth * 0.45;
+    const w = R * 0.9;  // THICK ribbon like reference image
     const centerX = this.width / 2;
     const centerY = this.height / 2;
-    const perspective = Math.max(pageWidth, pageHeight) * 1.2;
-    const tiltX = 0.85;  // View angle from above (like reference image)
+    const perspective = pageWidth * 2;
+    const tiltX = 1.0;  // View from above like reference image
 
     // Fixed number of segments for smooth strip
     this.mobius.uSegments = 48;
@@ -249,7 +248,7 @@ class MobiusRenderer {
     const drawnDays = new Set();
     for (let i = 0; i < this.mobius.uSegments; i++) {
       const centerCell = this.mobius.getCell(mesh, i, Math.floor(this.mobius.vSegments / 2));
-      if (centerCell && centerCell.avgZ < 80) {
+      if (centerCell && centerCell.avgZ < 150) {
         const dayIndex = Math.floor((i / this.mobius.uSegments) * totalDays + dayOffset) % totalDays;
         const actualDayIndex = dayIndex < 0 ? dayIndex + totalDays : dayIndex;
 
@@ -315,7 +314,7 @@ class MobiusRenderer {
 
     // Draw lines with depth-based opacity
     lines.forEach(({ points, avgZ }) => {
-      ctx.globalAlpha = Math.max(0.15, Math.min(0.7, 0.5 - avgZ / 500));
+      ctx.globalAlpha = Math.max(0.1, Math.min(0.8, 0.7 - avgZ / 600));
       ctx.beginPath();
       ctx.moveTo(points[0].x, points[0].y);
       for (let k = 1; k < points.length; k++) {
@@ -336,8 +335,8 @@ class MobiusRenderer {
     const cx = (cell.topLeft.x + cell.topRight.x + cell.bottomLeft.x + cell.bottomRight.x) / 4;
     const cy = (cell.topLeft.y + cell.topRight.y + cell.bottomLeft.y + cell.bottomRight.y) / 4;
 
-    const scale = Math.max(0.6, Math.min(1.3, cell.topLeft.scale));
-    const alpha = Math.max(0.4, Math.min(1, 0.9 - cell.avgZ / 250));
+    const scale = Math.max(0.6, Math.min(1.4, cell.topLeft.scale));
+    const alpha = Math.max(0.3, Math.min(1, 1 - cell.avgZ / 400));
 
     ctx.globalAlpha = alpha;
 
@@ -374,7 +373,7 @@ class MobiusRenderer {
 
     for (let i = 0; i < this.mobius.uSegments; i++) {
       const cell = this.mobius.getCell(mesh, i, midV);
-      if (!cell || cell.avgZ > 80) continue;
+      if (!cell || cell.avgZ > 150) continue;
 
       const cx = (cell.topLeft.x + cell.topRight.x + cell.bottomLeft.x + cell.bottomRight.x) / 4;
       const cy = (cell.topLeft.y + cell.topRight.y + cell.bottomLeft.y + cell.bottomRight.y) / 4;

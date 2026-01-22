@@ -85,8 +85,7 @@ function HopfLinkMesh({ showStudio }) {
 export default function HopfButton({
   onClick,
   size = 400,
-  style = {},
-  backgroundColor = '#87CEEB' // Sfondo azzurro cielo
+  style = {}
 }) {
   const [showStudio, setShowStudio] = useState(true);
   const [animating, setAnimating] = useState(false);
@@ -117,7 +116,7 @@ export default function HopfButton({
     >
       <Canvas
         camera={{ position: [0, 0, 6], fov: 50 }}
-        style={{ background: backgroundColor }}
+        style={{ background: 'transparent' }}
       >
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={0.8} />

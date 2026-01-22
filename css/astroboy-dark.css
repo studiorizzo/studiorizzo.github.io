@@ -1,0 +1,74 @@
+.astroboy-dark {
+  /* Primary - Red (Astro Boy boots) */
+  --md-sys-color-primary: rgb(255 180 171);
+  --md-sys-color-surface-tint: rgb(255 180 171);
+  --md-sys-color-on-primary: rgb(105 0 5);
+  --md-sys-color-primary-container: rgb(147 0 10);
+  --md-sys-color-on-primary-container: rgb(255 218 214);
+
+  /* Secondary - Green (Astro Boy belt) */
+  --md-sys-color-secondary: rgb(165 214 167);
+  --md-sys-color-on-secondary: rgb(0 57 4);
+  --md-sys-color-secondary-container: rgb(27 94 32);
+  --md-sys-color-on-secondary-container: rgb(200 230 201);
+
+  /* Tertiary - Blue Grey (metallic background) */
+  --md-sys-color-tertiary: rgb(176 190 197);
+  --md-sys-color-on-tertiary: rgb(0 36 46);
+  --md-sys-color-tertiary-container: rgb(38 50 56);
+  --md-sys-color-on-tertiary-container: rgb(207 216 220);
+
+  /* Error */
+  --md-sys-color-error: rgb(255 180 171);
+  --md-sys-color-on-error: rgb(105 0 5);
+  --md-sys-color-error-container: rgb(147 0 10);
+  --md-sys-color-on-error-container: rgb(255 218 214);
+
+  /* Background & Surface - Dark warm */
+  --md-sys-color-background: rgb(26 18 17);
+  --md-sys-color-on-background: rgb(240 228 225);
+  --md-sys-color-surface: rgb(26 18 17);
+  --md-sys-color-on-surface: rgb(240 228 225);
+  --md-sys-color-surface-variant: rgb(83 67 64);
+  --md-sys-color-on-surface-variant: rgb(216 194 190);
+
+  /* Outline */
+  --md-sys-color-outline: rgb(160 140 137);
+  --md-sys-color-outline-variant: rgb(83 67 64);
+
+  /* Shadow & Scrim */
+  --md-sys-color-shadow: rgb(0 0 0);
+  --md-sys-color-scrim: rgb(0 0 0);
+
+  /* Inverse */
+  --md-sys-color-inverse-surface: rgb(240 228 225);
+  --md-sys-color-inverse-on-surface: rgb(54 47 46);
+  --md-sys-color-inverse-primary: rgb(185 28 28);
+
+  /* Primary Fixed */
+  --md-sys-color-primary-fixed: rgb(255 218 214);
+  --md-sys-color-on-primary-fixed: rgb(65 0 3);
+  --md-sys-color-primary-fixed-dim: rgb(255 180 171);
+  --md-sys-color-on-primary-fixed-variant: rgb(147 0 10);
+
+  /* Secondary Fixed */
+  --md-sys-color-secondary-fixed: rgb(200 230 201);
+  --md-sys-color-on-secondary-fixed: rgb(0 51 0);
+  --md-sys-color-secondary-fixed-dim: rgb(165 214 167);
+  --md-sys-color-on-secondary-fixed-variant: rgb(27 94 32);
+
+  /* Tertiary Fixed */
+  --md-sys-color-tertiary-fixed: rgb(207 216 220);
+  --md-sys-color-on-tertiary-fixed: rgb(0 20 28);
+  --md-sys-color-tertiary-fixed-dim: rgb(176 190 197);
+  --md-sys-color-on-tertiary-fixed-variant: rgb(38 50 56);
+
+  /* Surface Containers */
+  --md-sys-color-surface-dim: rgb(26 18 17);
+  --md-sys-color-surface-bright: rgb(66 55 53);
+  --md-sys-color-surface-container-lowest: rgb(20 12 11);
+  --md-sys-color-surface-container-low: rgb(33 26 25);
+  --md-sys-color-surface-container: rgb(37 30 29);
+  --md-sys-color-surface-container-high: rgb(48 40 39);
+  --md-sys-color-surface-container-highest: rgb(59 51 49);
+}

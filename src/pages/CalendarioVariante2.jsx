@@ -12,8 +12,7 @@ function CalendarioVariante2() {
       height: '100%',
       display: 'flex',
       justifyContent: 'center',
-      alignItems: 'center',
-      background: '#87ceeb'
+      alignItems: 'center'
     }}>
       <HopfButton
         onClick={handleButtonClick}

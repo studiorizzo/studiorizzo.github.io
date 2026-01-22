@@ -1,19 +1,168 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
+import * as THREE from 'three';
 
-// Hopf Link - due anelli concatenati
-function HopfLinkMesh({ showStudio }) {
+// Hopf Band - vera superficie di Seifert dalla Hopf fibration
+function HopfBandMesh({ showStudio }) {
   const groupRef = useRef();
   const targetRotationRef = useRef(0);
 
+  // Aggiorna target rotation quando cambia showStudio
   React.useEffect(() => {
     targetRotationRef.current = showStudio ? 0 : Math.PI;
   }, [showStudio]);
 
-  // Parametri degli anelli
-  const R = 1.5;  // Raggio maggiore del toro
-  const r = 0.15; // Raggio del tubo
+  // Parametri Hopf band
+  const bandWidth = Math.PI / 3; // 60°
+  const stepsV = 60;
+  const stepsTheta = 120;
+
+  // Genera geometria della Hopf band e centri degli anelli
+  const { greenGeometry, redGeometry, greenRingCenter, redRingCenter } = useMemo(() => {
+    // Arco su S²
+    const getArcPoint = (v) => {
+      const phi = Math.PI / 2 - bandWidth / 2 + v * bandWidth;
+      return {
+        nx: Math.cos(phi),
+        ny: 0,
+        nz: Math.sin(phi)
+      };
+    };
+
+    // Spinore per la fibra
+    const getSpinor = (nx, ny, nz) => {
+      const eps = 1e-6;
+      if (nz > -1 + eps) {
+        const r = Math.sqrt((1 + nz) / 2);
+        return {
+          z1_re: r,
+          z1_im: 0,
+          z2_re: nx / (2 * r),
+          z2_im: ny / (2 * r)
+        };
+      } else {
+        return { z1_re: 0, z1_im: 0, z2_re: 1, z2_im: 0 };
+      }
+    };
+
+    // Punto su S³
+    const getFiberPointS3 = (nx, ny, nz, theta) => {
+      const { z1_re, z1_im, z2_re, z2_im } = getSpinor(nx, ny, nz);
+      const cos_t = Math.cos(theta);
+      const sin_t = Math.sin(theta);
+      return {
+        x1: z1_re * cos_t - z1_im * sin_t,
+        x2: z1_re * sin_t + z1_im * cos_t,
+        x3: z2_re * cos_t - z2_im * sin_t,
+        x4: z2_re * sin_t + z2_im * cos_t
+      };
+    };
+
+    // Proiezione stereografica S³→R³
+    const stereographic = (x1, x2, x3, x4) => {
+      const denom = 1 - x4;
+      const maxVal = 20;
+      if (Math.abs(denom) < 0.01) {
+        const sign = denom >= 0 ? 1 : -1;
+        return { x: x1 * maxVal * sign, y: x2 * maxVal * sign, z: x3 * maxVal * sign };
+      }
+      return { x: x1 / denom, y: x2 / denom, z: x3 / denom };
+    };
+
+    // Punto sulla Hopf band
+    const getHopfBandPoint = (v, theta) => {
+      const { nx, ny, nz } = getArcPoint(v);
+      const { x1, x2, x3, x4 } = getFiberPointS3(nx, ny, nz, theta);
+      return stereographic(x1, x2, x3, x4);
+    };
+
+    // Griglia di punti
+    const grid = [];
+    const maxCoord = 10;
+    for (let i = 0; i <= stepsV; i++) {
+      const row = [];
+      const v = i / stepsV;
+      for (let j = 0; j <= stepsTheta; j++) {
+        const theta = (j / stepsTheta) * Math.PI * 2;
+        const p = getHopfBandPoint(v, theta);
+        const x = Math.max(-maxCoord, Math.min(maxCoord, p.x));
+        const y = Math.max(-maxCoord, Math.min(maxCoord, p.y));
+        const z = Math.max(-maxCoord, Math.min(maxCoord, p.z));
+        row.push(new THREE.Vector3(x, y, z));
+      }
+      grid.push(row);
+    }
+
+    // Crea geometrie separate per le due facce
+    const frontVertices = [];
+    const frontIndices = [];
+    const backVertices = [];
+    const backIndices = [];
+
+    // Genera vertici per entrambe le facce
+    for (let i = 0; i <= stepsV; i++) {
+      for (let j = 0; j <= stepsTheta; j++) {
+        const p = grid[i][j];
+        frontVertices.push(p.x, p.y, p.z);
+        backVertices.push(p.x, p.y, p.z);
+      }
+    }
+
+    // Genera indici (triangoli) - ordine diverso per le due facce
+    for (let i = 0; i < stepsV; i++) {
+      for (let j = 0; j < stepsTheta; j++) {
+        const a = i * (stepsTheta + 1) + j;
+        const b = a + 1;
+        const c = a + (stepsTheta + 1);
+        const d = c + 1;
+
+        // Front face (counter-clockwise)
+        frontIndices.push(a, c, b);
+        frontIndices.push(b, c, d);
+
+        // Back face (clockwise = reversed)
+        backIndices.push(a, b, c);
+        backIndices.push(b, d, c);
+      }
+    }
+
+    // Crea BufferGeometry per faccia verde (front)
+    const greenGeom = new THREE.BufferGeometry();
+    greenGeom.setAttribute('position', new THREE.Float32BufferAttribute(frontVertices, 3));
+    greenGeom.setIndex(frontIndices);
+    greenGeom.computeVertexNormals();
+
+    // Crea BufferGeometry per faccia rossa (back)
+    const redGeom = new THREE.BufferGeometry();
+    redGeom.setAttribute('position', new THREE.Float32BufferAttribute(backVertices, 3));
+    redGeom.setIndex(backIndices);
+    redGeom.computeVertexNormals();
+
+    // Calcola il centro di un anello (bordo della Hopf band)
+    const computeRingCenter = (v) => {
+      let cx = 0, cy = 0, cz = 0;
+      const samples = 64;
+      for (let j = 0; j < samples; j++) {
+        const theta = (j / samples) * Math.PI * 2;
+        const p = getHopfBandPoint(v, theta);
+        cx += Math.max(-maxCoord, Math.min(maxCoord, p.x));
+        cy += Math.max(-maxCoord, Math.min(maxCoord, p.y));
+        cz += Math.max(-maxCoord, Math.min(maxCoord, p.z));
+      }
+      return new THREE.Vector3(cx / samples, cy / samples, cz / samples);
+    };
+
+    const greenCenter = computeRingCenter(0);
+    const redCenter = computeRingCenter(1);
+
+    return {
+      greenGeometry: greenGeom,
+      redGeometry: redGeom,
+      greenRingCenter: greenCenter,
+      redRingCenter: redCenter
+    };
+  }, [bandWidth, stepsV, stepsTheta]);
 
   // Animazione rotazione
   useFrame(() => {
@@ -27,36 +176,32 @@ function HopfLinkMesh({ showStudio }) {
     }
   });
 
-  // Posizioni per Hopf link classico:
-  // Anello 1 (verde): nel piano XY, centrato all'origine
-  // Anello 2 (rosso): nel piano XZ, spostato in modo che passi attraverso l'anello 1
-
   return (
-    <group ref={groupRef}>
-      {/* Anello verde - piano XY */}
-      <mesh rotation={[0, 0, 0]} position={[0, 0, 0]}>
-        <torusGeometry args={[R, r, 24, 64]} />
+    <group ref={groupRef} scale={0.5}>
+      {/* Faccia verde (front) - "studio" */}
+      <mesh geometry={greenGeometry}>
         <meshStandardMaterial
           color="#00aa00"
-          metalness={0.3}
-          roughness={0.4}
+          side={THREE.FrontSide}
+          metalness={0.1}
+          roughness={0.6}
         />
       </mesh>
 
-      {/* Anello rosso - piano XZ, passa attraverso l'anello verde */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[R, 0, 0]}>
-        <torusGeometry args={[R, r, 24, 64]} />
+      {/* Faccia rossa (back) - "cliente" */}
+      <mesh geometry={redGeometry}>
         <meshStandardMaterial
           color="#cc0000"
-          metalness={0.3}
-          roughness={0.4}
+          side={THREE.FrontSide}
+          metalness={0.1}
+          roughness={0.6}
         />
       </mesh>
 
-      {/* Testo "studio" - al centro dell'anello verde */}
+      {/* Testo "studio" al centro dell'anello verde (v=0) */}
       <Text
-        position={[0, 0, 0.1]}
-        fontSize={0.5}
+        position={[greenRingCenter.x, greenRingCenter.y, greenRingCenter.z]}
+        fontSize={1.2}
         color="#004400"
         anchorX="center"
         anchorY="middle"
@@ -65,11 +210,10 @@ function HopfLinkMesh({ showStudio }) {
         studio
       </Text>
 
-      {/* Testo "cliente" - al centro dell'anello rosso */}
+      {/* Testo "cliente" al centro dell'anello rosso (v=1) */}
       <Text
-        position={[R, 0, 0]}
-        rotation={[Math.PI / 2, 0, 0]}
-        fontSize={0.5}
+        position={[redRingCenter.x, redRingCenter.y, redRingCenter.z]}
+        fontSize={1.2}
         color="#440000"
         anchorX="center"
         anchorY="middle"
@@ -85,8 +229,7 @@ function HopfLinkMesh({ showStudio }) {
 export default function HopfButton({
   onClick,
   size = 400,
-  style = {},
-  backgroundColor = '#87CEEB' // Sfondo azzurro cielo
+  style = {}
 }) {
   const [showStudio, setShowStudio] = useState(true);
   const [animating, setAnimating] = useState(false);
@@ -117,13 +260,13 @@ export default function HopfButton({
     >
       <Canvas
         camera={{ position: [0, 0, 6], fov: 50 }}
-        style={{ background: backgroundColor }}
+        style={{ background: 'transparent' }}
       >
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={0.8} />
         <directionalLight position={[-5, -5, -5]} intensity={0.4} />
 
-        <HopfLinkMesh showStudio={showStudio} />
+        <HopfBandMesh showStudio={showStudio} />
       </Canvas>
     </div>
   );

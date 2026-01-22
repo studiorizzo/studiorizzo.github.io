@@ -59,7 +59,7 @@ export default function CalendarVariant2() {
     const H = size.height;
     const centerX = W / 2;
     const centerY = H / 2;
-    const scale = Math.min(W, H) * 0.18;
+    const scale = Math.min(W, H) * 0.35;
 
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, W, H);

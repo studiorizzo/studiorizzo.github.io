@@ -18,8 +18,8 @@ function HopfBandMesh({ showStudio }) {
   const stepsV = 60;
   const stepsTheta = 120;
 
-  // Genera geometria della Hopf band e degli anelli
-  const { greenGeometry, redGeometry, greenRingGeometry, redRingGeometry, greenRingCenter, redRingCenter } = useMemo(() => {
+  // Genera geometria della Hopf band e centri degli anelli
+  const { greenGeometry, redGeometry, greenRingCenter, redRingCenter } = useMemo(() => {
     // Arco su S²
     const getArcPoint = (v) => {
       const phi = Math.PI / 2 - bandWidth / 2 + v * bandWidth;
@@ -139,21 +139,7 @@ function HopfBandMesh({ showStudio }) {
     redGeom.setIndex(backIndices);
     redGeom.computeVertexNormals();
 
-    // Crea gli anelli di bordo (Hopf link)
-    const createRingCurve = (v) => {
-      const points = [];
-      for (let j = 0; j <= stepsTheta; j++) {
-        const theta = (j / stepsTheta) * Math.PI * 2;
-        const p = getHopfBandPoint(v, theta);
-        const x = Math.max(-maxCoord, Math.min(maxCoord, p.x));
-        const y = Math.max(-maxCoord, Math.min(maxCoord, p.y));
-        const z = Math.max(-maxCoord, Math.min(maxCoord, p.z));
-        points.push(new THREE.Vector3(x, y, z));
-      }
-      return new THREE.CatmullRomCurve3(points, true);
-    };
-
-    // Calcola il centro di un anello
+    // Calcola il centro di un anello (bordo della Hopf band)
     const computeRingCenter = (v) => {
       let cx = 0, cy = 0, cz = 0;
       const samples = 64;
@@ -167,24 +153,12 @@ function HopfBandMesh({ showStudio }) {
       return new THREE.Vector3(cx / samples, cy / samples, cz / samples);
     };
 
-    const greenCurve = createRingCurve(0);
-    const redCurve = createRingCurve(1);
-
-    const tubeRadius = 0.15;
-    const tubeSegments = 64;
-    const radialSegments = 16;
-
-    const greenRingGeom = new THREE.TubeGeometry(greenCurve, tubeSegments, tubeRadius, radialSegments, true);
-    const redRingGeom = new THREE.TubeGeometry(redCurve, tubeSegments, tubeRadius, radialSegments, true);
-
     const greenCenter = computeRingCenter(0);
     const redCenter = computeRingCenter(1);
 
     return {
       greenGeometry: greenGeom,
       redGeometry: redGeom,
-      greenRingGeometry: greenRingGeom,
-      redRingGeometry: redRingGeom,
       greenRingCenter: greenCenter,
       redRingCenter: redCenter
     };
@@ -203,7 +177,7 @@ function HopfBandMesh({ showStudio }) {
   });
 
   return (
-    <group ref={groupRef} scale={0.35}>
+    <group ref={groupRef} scale={0.5}>
       {/* Faccia verde (front) - "studio" */}
       <mesh geometry={greenGeometry}>
         <meshStandardMaterial
@@ -224,11 +198,11 @@ function HopfBandMesh({ showStudio }) {
         />
       </mesh>
 
-      {/* Testo "studio" sulla faccia verde */}
+      {/* Testo "studio" al centro dell'anello verde (v=0) */}
       <Text
-        position={[0, 0, 3]}
-        fontSize={2}
-        color="#000000"
+        position={[greenRingCenter.x, greenRingCenter.y, greenRingCenter.z]}
+        fontSize={1.2}
+        color="#004400"
         anchorX="center"
         anchorY="middle"
         fontWeight="bold"
@@ -236,12 +210,11 @@ function HopfBandMesh({ showStudio }) {
         studio
       </Text>
 
-      {/* Testo "cliente" sulla faccia rossa (retro) */}
+      {/* Testo "cliente" al centro dell'anello rosso (v=1) */}
       <Text
-        position={[0, 0, -3]}
-        rotation={[0, Math.PI, 0]}
-        fontSize={2}
-        color="#000000"
+        position={[redRingCenter.x, redRingCenter.y, redRingCenter.z]}
+        fontSize={1.2}
+        color="#440000"
         anchorX="center"
         anchorY="middle"
         fontWeight="bold"
@@ -287,7 +260,7 @@ export default function HopfButton({
     >
       <Canvas
         camera={{ position: [0, 0, 6], fov: 50 }}
-        style={{ background: '#87ceeb' }}
+        style={{ background: 'transparent' }}
       >
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={0.8} />

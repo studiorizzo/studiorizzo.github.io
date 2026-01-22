@@ -3,23 +3,8 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Disco/Banda circolare piatta (come nell'immagine)
-function FlatRing({ color, position, rotation }) {
-  return (
-    <mesh position={position} rotation={rotation}>
-      <ringGeometry args={[1.2, 2.5, 128]} />
-      <meshStandardMaterial
-        color={color}
-        side={THREE.DoubleSide}
-        metalness={0.1}
-        roughness={0.5}
-      />
-    </mesh>
-  );
-}
-
-// Gruppo di anelli intrecciati che ruotano (Hopf link style)
-function LinkedRings({ showStudio, animating }) {
+// Due tori intrecciati (vero Hopf link)
+function HopfLink({ showStudio }) {
   const groupRef = useRef();
   const [targetRotation, setTargetRotation] = useState(0);
 
@@ -29,36 +14,43 @@ function LinkedRings({ showStudio, animating }) {
 
   useFrame(() => {
     if (groupRef.current) {
-      // Interpolazione fluida verso la rotazione target
-      const diff = targetRotation - groupRef.current.rotation.x;
+      const diff = targetRotation - groupRef.current.rotation.y;
       if (Math.abs(diff) > 0.01) {
-        groupRef.current.rotation.x += diff * 0.08;
+        groupRef.current.rotation.y += diff * 0.08;
       } else {
-        groupRef.current.rotation.x = targetRotation;
+        groupRef.current.rotation.y = targetRotation;
       }
     }
   });
 
   return (
     <group ref={groupRef}>
-      {/* Anello verde (studio) - orizzontale, leggermente inclinato */}
-      <FlatRing
-        color="#00cc00"
-        position={[0, 0.5, 0]}
-        rotation={[Math.PI / 2.5, 0, 0]}
-      />
+      {/* Toro verde - orizzontale (piano XZ) */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[2, 0.4, 64, 128]} />
+        <meshStandardMaterial
+          color="#008800"
+          side={THREE.DoubleSide}
+          metalness={0.1}
+          roughness={0.6}
+        />
+      </mesh>
 
-      {/* Anello rosso (cliente) - intrecciato con il verde */}
-      <FlatRing
-        color="#cc0000"
-        position={[0, -0.5, 0]}
-        rotation={[Math.PI / 1.8, 0, Math.PI / 3]}
-      />
+      {/* Toro rosso - verticale (piano XY), passa attraverso il verde */}
+      <mesh position={[2, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <torusGeometry args={[2, 0.4, 64, 128]} />
+        <meshStandardMaterial
+          color="#aa0000"
+          side={THREE.DoubleSide}
+          metalness={0.1}
+          roughness={0.6}
+        />
+      </mesh>
 
-      {/* Testo "studio" - visibile quando showStudio è true */}
+      {/* Testo centrale */}
       <Text
-        position={[0, 0, 1]}
-        fontSize={1.2}
+        position={[0, 0, 2.5]}
+        fontSize={1.4}
         color="#000000"
         anchorX="center"
         anchorY="middle"
@@ -103,14 +95,14 @@ export default function HopfButton({
       onClick={handleClick}
     >
       <Canvas
-        camera={{ position: [0, 0, 8], fov: 45 }}
+        camera={{ position: [0, 0, 10], fov: 45 }}
         style={{ background: '#87ceeb' }}
       >
         <ambientLight intensity={0.6} />
         <directionalLight position={[5, 5, 5]} intensity={0.8} />
         <directionalLight position={[-5, -5, 5]} intensity={0.4} />
 
-        <LinkedRings showStudio={showStudio} animating={animating} />
+        <HopfLink showStudio={showStudio} />
       </Canvas>
     </div>
   );

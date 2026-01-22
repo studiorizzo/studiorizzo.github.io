@@ -18,8 +18,8 @@ function HopfBandMesh({ showStudio }) {
   const stepsV = 60;
   const stepsTheta = 120;
 
-  // Genera geometria della Hopf band
-  const { geometry, greenGeometry, redGeometry } = useMemo(() => {
+  // Genera geometria della Hopf band e degli anelli
+  const { greenGeometry, redGeometry, greenRingGeometry, redRingGeometry, greenRingCenter, redRingCenter } = useMemo(() => {
     // Arco su S²
     const getArcPoint = (v) => {
       const phi = Math.PI / 2 - bandWidth / 2 + v * bandWidth;
@@ -139,7 +139,55 @@ function HopfBandMesh({ showStudio }) {
     redGeom.setIndex(backIndices);
     redGeom.computeVertexNormals();
 
-    return { geometry: null, greenGeometry: greenGeom, redGeometry: redGeom };
+    // Crea gli anelli di bordo (Hopf link)
+    const createRingCurve = (v) => {
+      const points = [];
+      for (let j = 0; j <= stepsTheta; j++) {
+        const theta = (j / stepsTheta) * Math.PI * 2;
+        const p = getHopfBandPoint(v, theta);
+        const x = Math.max(-maxCoord, Math.min(maxCoord, p.x));
+        const y = Math.max(-maxCoord, Math.min(maxCoord, p.y));
+        const z = Math.max(-maxCoord, Math.min(maxCoord, p.z));
+        points.push(new THREE.Vector3(x, y, z));
+      }
+      return new THREE.CatmullRomCurve3(points, true);
+    };
+
+    // Calcola il centro di un anello
+    const computeRingCenter = (v) => {
+      let cx = 0, cy = 0, cz = 0;
+      const samples = 64;
+      for (let j = 0; j < samples; j++) {
+        const theta = (j / samples) * Math.PI * 2;
+        const p = getHopfBandPoint(v, theta);
+        cx += Math.max(-maxCoord, Math.min(maxCoord, p.x));
+        cy += Math.max(-maxCoord, Math.min(maxCoord, p.y));
+        cz += Math.max(-maxCoord, Math.min(maxCoord, p.z));
+      }
+      return new THREE.Vector3(cx / samples, cy / samples, cz / samples);
+    };
+
+    const greenCurve = createRingCurve(0);
+    const redCurve = createRingCurve(1);
+
+    const tubeRadius = 0.15;
+    const tubeSegments = 64;
+    const radialSegments = 16;
+
+    const greenRingGeom = new THREE.TubeGeometry(greenCurve, tubeSegments, tubeRadius, radialSegments, true);
+    const redRingGeom = new THREE.TubeGeometry(redCurve, tubeSegments, tubeRadius, radialSegments, true);
+
+    const greenCenter = computeRingCenter(0);
+    const redCenter = computeRingCenter(1);
+
+    return {
+      greenGeometry: greenGeom,
+      redGeometry: redGeom,
+      greenRingGeometry: greenRingGeom,
+      redRingGeometry: redRingGeom,
+      greenRingCenter: greenCenter,
+      redRingCenter: redCenter
+    };
   }, [bandWidth, stepsV, stepsTheta]);
 
   // Animazione rotazione

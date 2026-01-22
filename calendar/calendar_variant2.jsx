@@ -229,7 +229,7 @@ export default function CalendarVariant2() {
 
         const avgZ = (rp1.z + rp2.z + rp3.z + rp4.z) / 4;
 
-        // Normale per shading
+        // Normale per determinare quale faccia è visibile
         const edge1 = { x: rp2.x - rp1.x, y: rp2.y - rp1.y, z: rp2.z - rp1.z };
         const edge2 = { x: rp4.x - rp1.x, y: rp4.y - rp1.y, z: rp4.z - rp1.z };
         const normal = {
@@ -240,12 +240,27 @@ export default function CalendarVariant2() {
         const len = Math.sqrt(normal.x ** 2 + normal.y ** 2 + normal.z ** 2);
         const nz_norm = len > 0 ? Math.abs(normal.z / len) : 0;
 
-        const shade = Math.floor(180 + nz_norm * 75);
+        // Determina quale faccia è rivolta verso la camera (z positivo = verso osservatore)
+        const facingCamera = normal.z > 0;
+
+        // Colori come gli anelli: verde (#00AA00) e rosso (#CC0000)
+        // con shading basato sulla normale
+        const brightness = 0.6 + nz_norm * 0.4;
+        let color;
+        if (facingCamera) {
+          // Faccia verde (come anello v=0)
+          const g = Math.floor(170 * brightness);
+          color = `rgb(0, ${g}, 0)`;
+        } else {
+          // Faccia rossa (come anello v=1)
+          const r = Math.floor(204 * brightness);
+          color = `rgb(${r}, 0, 0)`;
+        }
 
         surfaceQuads.push({
           points: [proj1, proj2, proj3, proj4],
           z: avgZ,
-          color: `rgb(${shade}, ${shade}, ${shade})`
+          color: color
         });
       }
     }

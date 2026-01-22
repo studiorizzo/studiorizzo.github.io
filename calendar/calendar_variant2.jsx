@@ -97,10 +97,11 @@ export default function CalendarVariant2() {
     // 2. Per ogni punto n sull'arco, calcoliamo la fibra (cerchio su S³)
     // 3. Proiettiamo stereograficamente da S³ a R³
 
-    // Arco su S²: semicerchio da (1,0,0) a (-1,0,0) passando per (0,0,1)
-    // Questo arco attraversa il "polo nord" di S²
+    // Arco su S²: centrato attorno al polo nord (0,0,1)
+    // bandWidth controlla la larghezza della fascia (in radianti)
+    const bandWidth = Math.PI / 3; // 60° (era π = 180°)
     const getArcPoint = (v) => {
-      const phi = v * Math.PI; // da 0 a π
+      const phi = Math.PI / 2 - bandWidth / 2 + v * bandWidth;
       return {
         nx: Math.cos(phi),
         ny: 0,

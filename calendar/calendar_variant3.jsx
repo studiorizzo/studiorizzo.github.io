@@ -41,7 +41,13 @@ class GPUComputationRenderer {
   }
 
   getPassThroughFragmentShader() {
-    return `uniform sampler2D passThruTexture; void main() { vec2 uv = gl_FragCoord.xy / resolution.xy; gl_FragColor = texture2D(passThruTexture, uv); }`;
+    return `
+      uniform sampler2D passThruTexture;
+      void main() {
+        vec2 uv = gl_FragCoord.xy / vec2(${this.sizeX.toFixed(1)}, ${this.sizeY.toFixed(1)});
+        gl_FragColor = texture2D(passThruTexture, uv);
+      }
+    `;
   }
 
   createTexture() {

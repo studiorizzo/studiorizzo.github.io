@@ -196,9 +196,10 @@ const heightmapFragmentShader = `
   uniform float time;
 
   #define PI 3.141592653589793
+  #define RESOLUTION ${WIDTH.toFixed(1)}
 
   void main() {
-    vec2 cellSize = 1.0 / resolution.xy;
+    vec2 cellSize = vec2(1.0 / RESOLUTION);
     vec2 uv = gl_FragCoord.xy * cellSize;
 
     // heightmapValue.x = current height
@@ -360,9 +361,6 @@ function GPGPUWater({ onHeightmapUpdate, mousePos, events, currentMonth, current
     heightmapVariable.material.uniforms.eventTimes = { value: new Float32Array(42) };
     heightmapVariable.material.uniforms.eventCount = { value: 0 };
     heightmapVariable.material.uniforms.time = { value: 0 };
-
-    // Add resolution define
-    heightmapVariable.material.defines.resolution = `vec2(${WIDTH.toFixed(1)}, ${WIDTH.toFixed(1)})`;
 
     const error = gpuCompute.init();
     if (error !== null) {

@@ -131,14 +131,14 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
   const gridWidth = 7;
   const gridHeight = 6;
   const cellSize = 1;
-  const segments = 28;
+  const segmentsPerCell = 4;
 
   const geometry = useMemo(() => {
     const geo = new THREE.PlaneGeometry(
       gridWidth * cellSize,
       gridHeight * cellSize,
-      segments,
-      segments
+      gridWidth * segmentsPerCell,  // 28 segmenti in X (4 per cella)
+      gridHeight * segmentsPerCell  // 24 segmenti in Y (4 per cella)
     );
     geo.userData.originalPositions = geo.attributes.position.array.slice();
     return geo;
@@ -184,8 +184,8 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
         const dy = oy - mp.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Raggio della sfera = metà lato cella (sfera inscritta nel quadrato)
-        const sphereRadius = halfCell;
+        // Raggio della sfera = 80% della metà cella (margine per evitare sbordamenti)
+        const sphereRadius = halfCell * 0.8;  // 0.4 invece di 0.5
 
         // Solo se il vertice è sotto la sfera (distanza < raggio)
         if (dist < sphereRadius) {

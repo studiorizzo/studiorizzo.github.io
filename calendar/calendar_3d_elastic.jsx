@@ -195,9 +195,10 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
           // k = 4.6 fa sì che exp(-4.6) ≈ 0.01
           const falloff = Math.exp(-4.6 * normalizedDist * normalizedDist);
 
-          // Profondità: proporzionale alla massa, con cap a 0.25
-          // mass va da ~270 (500€) a ~600 (100k€ con moltiplicatore 1.2)
-          const maxDepth = Math.min(mp.mass / 2000, 0.25);
+          // Profondità: proporzionale alla massa, con cap a 0.4
+          // mass va da ~270 (500€) a ~1500+ (multipli eventi grandi)
+          // Divisore 4000 per permettere accumulo di più eventi
+          const maxDepth = Math.min(mp.mass / 4000, 0.4);
           targetZ -= maxDepth * falloff;
         }
       }

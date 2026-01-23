@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useMemo, useCallback, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Text, OrbitControls } from '@react-three/drei';
+import { Text, OrbitControls, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { useTheme } from '../src/context/ThemeContext';
 
@@ -162,10 +162,12 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
   }, [calendarDays, eventsByDate]);
 
   useFrame(() => {
-    if (!meshRef.current) return;
+    if (!meshRef.current?.geometry?.attributes?.position) return;
+    const geo = meshRef.current.geometry;
+    if (!geo.userData.originalPositions) return;
 
-    const positions = meshRef.current.geometry.attributes.position.array;
-    const original = meshRef.current.geometry.userData.originalPositions;
+    const positions = geo.attributes.position.array;
+    const original = geo.userData.originalPositions;
 
     for (let i = 0; i < positions.length; i += 3) {
       const ox = original[i];
@@ -192,8 +194,8 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
       positions[i + 2] = currentZ + (targetZ - currentZ) * 0.1;
     }
 
-    meshRef.current.geometry.attributes.position.needsUpdate = true;
-    meshRef.current.geometry.computeVertexNormals();
+    geo.attributes.position.needsUpdate = true;
+    geo.computeVertexNormals();
   });
 
   const handlePointerMove = useCallback((e) => {
@@ -253,37 +255,31 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
       <group rotation={[-Math.PI * 0.15, 0, 0]} position={[0, 0.31, 0]}>
         {/* Vertical lines */}
         {Array.from({ length: 8 }).map((_, i) => (
-          <line key={`v-${i}`}>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                count={2}
-                array={new Float32Array([
-                  (i - 3.5) * cellSize, -gridHeight * cellSize / 2, 0.01,
-                  (i - 3.5) * cellSize, gridHeight * cellSize / 2, 0.01
-                ])}
-                itemSize={3}
-              />
-            </bufferGeometry>
-            <lineBasicMaterial color={colors.gridColor} opacity={0.5} transparent />
-          </line>
+          <Line
+            key={`v-${i}`}
+            points={[
+              [(i - 3.5) * cellSize, -gridHeight * cellSize / 2, 0.01],
+              [(i - 3.5) * cellSize, gridHeight * cellSize / 2, 0.01]
+            ]}
+            color={colors.gridColor}
+            lineWidth={1}
+            transparent
+            opacity={0.5}
+          />
         ))}
         {/* Horizontal lines */}
         {Array.from({ length: 7 }).map((_, i) => (
-          <line key={`h-${i}`}>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                count={2}
-                array={new Float32Array([
-                  -gridWidth * cellSize / 2, (i - 3) * cellSize, 0.01,
-                  gridWidth * cellSize / 2, (i - 3) * cellSize, 0.01
-                ])}
-                itemSize={3}
-              />
-            </bufferGeometry>
-            <lineBasicMaterial color={colors.gridColor} opacity={0.5} transparent />
-          </line>
+          <Line
+            key={`h-${i}`}
+            points={[
+              [-gridWidth * cellSize / 2, (i - 3) * cellSize, 0.01],
+              [gridWidth * cellSize / 2, (i - 3) * cellSize, 0.01]
+            ]}
+            color={colors.gridColor}
+            lineWidth={1}
+            transparent
+            opacity={0.5}
+          />
         ))}
       </group>
 
@@ -297,7 +293,6 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
             color={colors.primary}
             anchorX="center"
             anchorY="middle"
-            font="/fonts/Orbitron-Bold.ttf"
           >
             {day}
           </Text>
@@ -336,7 +331,6 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
                 color={day.isCurrentMonth ? (hasEvents ? colors.onSurface : colors.onSurfaceVariant) : colors.outline}
                 anchorX="center"
                 anchorY="middle"
-                font="/fonts/Orbitron-Regular.ttf"
               >
                 {day.day}
               </Text>
@@ -391,20 +385,34 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
 // SCENE
 // ============================================
 function Scene({ calendarDays, eventsByDate, colors, onCellClick, hoveredCell, setHoveredCell }) {
+  // Debug: log when Scene renders
+  console.log('Scene rendering, colors:', colors);
+
   return (
     <>
       <ambientLight intensity={0.6} />
       <directionalLight position={[5, 10, 5]} intensity={0.8} />
       <pointLight position={[-5, 5, 5]} intensity={0.4} color="#83D2E3" />
 
-      <ElasticSurface
-        calendarDays={calendarDays}
-        eventsByDate={eventsByDate}
-        colors={colors}
-        onCellClick={onCellClick}
-        hoveredCell={hoveredCell}
-        setHoveredCell={setHoveredCell}
-      />
+      {/* Debug cube - always visible */}
+      <mesh position={[0, 0, 2]}>
+        <boxGeometry args={[2, 2, 2]} />
+        <meshStandardMaterial color="#ff0000" />
+      </mesh>
+      <axesHelper args={[5]} />
+
+      {/* TESTING: temporarily disabled to see if basic rendering works
+      {colors && (
+        <ElasticSurface
+          calendarDays={calendarDays}
+          eventsByDate={eventsByDate}
+          colors={colors}
+          onCellClick={onCellClick}
+          hoveredCell={hoveredCell}
+          setHoveredCell={setHoveredCell}
+        />
+      )}
+      */}
 
       <OrbitControls
         enablePan={false}
@@ -540,20 +548,27 @@ export default function Calendario3DElastic() {
       </div>
 
       {/* 3D Canvas */}
-      <div style={{ flex: 1, minHeight: 400 }}>
+      <div style={{ flex: 1, minHeight: 400, position: 'relative' }}>
         <Canvas
           camera={{ position: [0, 2, 8], fov: 50 }}
           style={{ background: colors.background }}
+          onCreated={({ gl }) => {
+            console.log('Canvas created, WebGL context:', gl.getContext());
+            gl.setClearColor(colors.background);
+          }}
+          fallback={<div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.onSurface }}>WebGL non supportato</div>}
         >
           <color attach="background" args={[colors.background]} />
-          <Scene
-            calendarDays={calendarDays}
-            eventsByDate={eventsByDate}
-            colors={colors}
-            onCellClick={handleCellClick}
-            hoveredCell={hoveredCell}
-            setHoveredCell={setHoveredCell}
-          />
+          <Suspense fallback={null}>
+            <Scene
+              calendarDays={calendarDays}
+              eventsByDate={eventsByDate}
+              colors={colors}
+              onCellClick={handleCellClick}
+              hoveredCell={hoveredCell}
+              setHoveredCell={setHoveredCell}
+            />
+          </Suspense>
         </Canvas>
       </div>
 

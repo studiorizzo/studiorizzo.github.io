@@ -20,6 +20,26 @@ function Sidebar({ isOpen, onClose }) {
       </div>
 
       <nav className={styles.nav}>
+        {/* Calendario 3D */}
+        <div className={styles.section}>
+          <NavLink to="/calendario-3d" className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}>
+            <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
+              <path d="M8 0L1 4v8l7 4 7-4V4L8 0zm0 1.5L13.5 4.5 8 7.5 2.5 4.5 8 1.5zM2 5.5l5.5 3v5.5L2 11V5.5zm6.5 8.5V8.5l5.5-3V11l-5.5 3z"></path>
+            </svg>
+            <span>Calendario 3D</span>
+          </NavLink>
+        </div>
+
+        {/* Calendario 2D */}
+        <div className={styles.section}>
+          <NavLink to="/calendario-2d" className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}>
+            <svg viewBox="0 0 16 16" fill="currentColor" className={styles.navIcon}>
+              <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.25-11.25a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0zm3 0a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0zm-6 3a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0zm3 0a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0zm3 0a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0zm-4.5 3a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0zm3 0a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0z"></path>
+            </svg>
+            <span>Calendario 2D</span>
+          </NavLink>
+        </div>
+
         {/* Variante 1 */}
         <div className={styles.section}>
           <NavLink to="/variante-1" className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}>

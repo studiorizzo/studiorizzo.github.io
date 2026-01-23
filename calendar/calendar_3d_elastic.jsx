@@ -180,11 +180,11 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
         const dy = oy - mp.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        const radius = 1.2;
+        const radius = 1.5;
         if (dist < radius) {
-          const normalizedMass = Math.min(mp.mass / 400, 1);
+          const normalizedMass = Math.min(mp.mass / 300, 1);
           const falloff = 1 - (dist / radius);
-          const depth = normalizedMass * 0.6 * falloff * falloff;
+          const depth = normalizedMass * 1.2 * falloff * falloff;
           totalZ -= depth;
         }
       }
@@ -243,11 +243,11 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
       >
         <primitive object={geometry} attach="geometry" />
         <meshStandardMaterial
-          color={colors.surface}
+          color={colors.surfaceContainerHigh}
           side={THREE.DoubleSide}
           flatShading={false}
-          metalness={0.1}
-          roughness={0.8}
+          metalness={0.3}
+          roughness={0.4}
         />
       </mesh>
 
@@ -283,13 +283,13 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
         ))}
       </group>
 
-      {/* Weekday labels */}
-      <group position={[0, 3.2, 0]}>
+      {/* Weekday labels - same rotation as calendar surface */}
+      <group rotation={[-Math.PI * 0.15, 0, 0]} position={[0, 0.32, 0]}>
         {WEEKDAYS.map((day, i) => (
           <Text
             key={day}
-            position={[(i - 3) * cellSize + cellSize / 2, 0, 0]}
-            fontSize={0.18}
+            position={[(i - 3) * cellSize + cellSize / 2, gridHeight * cellSize / 2 + 0.3, 0.02]}
+            fontSize={0.22}
             color={colors.primary}
             anchorX="center"
             anchorY="middle"
@@ -299,84 +299,39 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
         ))}
       </group>
 
-      {/* Day numbers and events */}
+      {/* Day numbers */}
       <group rotation={[-Math.PI * 0.15, 0, 0]} position={[0, 0.32, 0]}>
         {calendarDays.map((day, idx) => {
           const col = idx % 7;
           const row = Math.floor(idx / 7);
           const x = (col - 3) * cellSize + cellSize / 2;
           const y = (2.5 - row) * cellSize - cellSize / 2;
-          const events = eventsByDate[day.date?.toDateString()] || [];
-          const hasEvents = events.length > 0 && day.isCurrentMonth;
           const isHovered = hoveredCell === idx;
 
           return (
-            <group key={idx} position={[x, y, hasEvents ? 0.15 : 0.05]}>
+            <group key={idx} position={[x, y, 0.05]}>
               {/* Hover highlight */}
               {isHovered && day.isCurrentMonth && (
                 <mesh position={[0, 0, -0.02]}>
                   <planeGeometry args={[cellSize * 0.9, cellSize * 0.9]} />
-                  <meshBasicMaterial
-                    color={hasEvents ? PAYMENT_TYPES[events[0]?.type]?.color || colors.primary : colors.primary}
-                    opacity={0.2}
-                    transparent
-                  />
+                  <meshBasicMaterial color={colors.primary} opacity={0.2} transparent />
                 </mesh>
               )}
-
               {/* Day number */}
               <Text
-                position={[0, hasEvents ? 0.25 : 0, 0.02]}
-                fontSize={hasEvents ? 0.22 : 0.2}
-                color={day.isCurrentMonth ? (hasEvents ? colors.onSurface : colors.onSurfaceVariant) : colors.outline}
+                position={[0, 0, 0.02]}
+                fontSize={0.2}
+                color={day.isCurrentMonth ? colors.onSurfaceVariant : colors.outline}
                 anchorX="center"
                 anchorY="middle"
               >
                 {day.day}
               </Text>
-
-              {/* Event indicator */}
-              {hasEvents && (
-                <group position={[0, -0.15, 0.02]}>
-                  <mesh>
-                    <circleGeometry args={[0.12, 16]} />
-                    <meshBasicMaterial color={PAYMENT_TYPES[events[0]?.type]?.color || colors.primary} />
-                  </mesh>
-                  {events.length > 1 && (
-                    <Text
-                      position={[0.25, 0, 0]}
-                      fontSize={0.12}
-                      color={colors.onSurfaceVariant}
-                      anchorX="center"
-                      anchorY="middle"
-                    >
-                      +{events.length - 1}
-                    </Text>
-                  )}
-                </group>
-              )}
             </group>
           );
         })}
       </group>
 
-      {/* Mass point markers (spheres that sink into surface) */}
-      {massPoints.map((mp, i) => (
-        <mesh
-          key={i}
-          position={[mp.x, mp.y * Math.cos(Math.PI * 0.15) + 0.3, -mp.y * Math.sin(Math.PI * 0.15)]}
-          rotation={[-Math.PI * 0.15, 0, 0]}
-        >
-          <sphereGeometry args={[0.08 + Math.min(mp.mass / 800, 0.1), 16, 16]} />
-          <meshStandardMaterial
-            color={PAYMENT_TYPES[mp.events[0]?.type]?.color || colors.primary}
-            emissive={PAYMENT_TYPES[mp.events[0]?.type]?.color || colors.primary}
-            emissiveIntensity={0.3}
-            metalness={0.5}
-            roughness={0.3}
-          />
-        </mesh>
-      ))}
     </group>
   );
 }
@@ -387,9 +342,10 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
 function Scene({ calendarDays, eventsByDate, colors, onCellClick, hoveredCell, setHoveredCell }) {
   return (
     <>
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[5, 10, 5]} intensity={0.8} />
-      <pointLight position={[-5, 5, 5]} intensity={0.4} color="#83D2E3" />
+      <ambientLight intensity={0.3} />
+      <directionalLight position={[5, 8, 10]} intensity={1.2} />
+      <directionalLight position={[-3, 5, -5]} intensity={0.5} color="#a0d8ef" />
+      <pointLight position={[0, -3, 2]} intensity={0.6} color="#ffaa77" />
 
       {colors && (
         <ElasticSurface

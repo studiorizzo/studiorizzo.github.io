@@ -131,14 +131,14 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
   const gridWidth = 7;
   const gridHeight = 6;
   const cellSize = 1;
-  const segmentsPerCell = 4;
+  const segmentsPerCell = 8;  // Aumentato per calotta più smooth
 
   const geometry = useMemo(() => {
     const geo = new THREE.PlaneGeometry(
       gridWidth * cellSize,
       gridHeight * cellSize,
-      gridWidth * segmentsPerCell,  // 28 segmenti in X (4 per cella)
-      gridHeight * segmentsPerCell  // 24 segmenti in Y (4 per cella)
+      gridWidth * segmentsPerCell,  // 56 segmenti in X (8 per cella)
+      gridHeight * segmentsPerCell  // 48 segmenti in Y (8 per cella)
     );
     geo.userData.originalPositions = geo.attributes.position.array.slice();
     return geo;
@@ -248,7 +248,7 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
 
   return (
     <group>
-      {/* Main surface */}
+      {/* Main surface - front side only (opaque) */}
       <mesh
         ref={meshRef}
         rotation={[-Math.PI * 0.15, 0, 0]}
@@ -359,9 +359,11 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
 function Scene({ calendarDays, eventsByDate, colors, onCellClick, hoveredCell, setHoveredCell }) {
   return (
     <>
-      <ambientLight intensity={0.3} />
-      <directionalLight position={[5, 8, 10]} intensity={1.2} />
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[5, 8, 10]} intensity={1.0} />
       <directionalLight position={[-3, 5, -5]} intensity={0.5} color="#a0d8ef" />
+      {/* Luce dal retro per debug - illumina il retro della superficie */}
+      <pointLight position={[0, 0, -5]} intensity={1.5} color="#ff6600" />
       <pointLight position={[0, -3, 2]} intensity={0.6} color="#ffaa77" />
 
       {colors && (

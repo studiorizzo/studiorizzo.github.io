@@ -385,23 +385,12 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
 // SCENE
 // ============================================
 function Scene({ calendarDays, eventsByDate, colors, onCellClick, hoveredCell, setHoveredCell }) {
-  // Debug: log when Scene renders
-  console.log('Scene rendering, colors:', colors);
-
   return (
     <>
       <ambientLight intensity={0.6} />
       <directionalLight position={[5, 10, 5]} intensity={0.8} />
       <pointLight position={[-5, 5, 5]} intensity={0.4} color="#83D2E3" />
 
-      {/* Debug cube - always visible */}
-      <mesh position={[0, 0, 2]}>
-        <boxGeometry args={[2, 2, 2]} />
-        <meshStandardMaterial color="#ff0000" />
-      </mesh>
-      <axesHelper args={[5]} />
-
-      {/* TESTING: temporarily disabled to see if basic rendering works
       {colors && (
         <ElasticSurface
           calendarDays={calendarDays}
@@ -412,7 +401,6 @@ function Scene({ calendarDays, eventsByDate, colors, onCellClick, hoveredCell, s
           setHoveredCell={setHoveredCell}
         />
       )}
-      */}
 
       <OrbitControls
         enablePan={false}
@@ -553,7 +541,6 @@ export default function Calendario3DElastic() {
           camera={{ position: [0, 2, 8], fov: 50 }}
           style={{ background: colors.background }}
           onCreated={({ gl }) => {
-            console.log('Canvas created, WebGL context:', gl.getContext());
             gl.setClearColor(colors.background);
           }}
           fallback={<div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.onSurface }}>WebGL non supportato</div>}

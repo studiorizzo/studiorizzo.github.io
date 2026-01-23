@@ -170,32 +170,39 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
 
     const positions = geo.attributes.position.array;
     const original = geo.userData.originalPositions;
+    const halfCell = cellSize / 2; // 0.5
 
     for (let i = 0; i < positions.length; i += 3) {
       const ox = original[i];
       const oy = original[i + 1];
 
-      let totalZ = 0;
+      let targetZ = 0;
 
+      // Per ogni cella con eventi
       for (const mp of massPoints) {
         const dx = ox - mp.x;
         const dy = oy - mp.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Raggio di influenza proporzionale alla massa
-        const baseRadius = 1.2;
-        const massRadius = baseRadius + Math.min(mp.mass / 600, 0.8);
-        if (dist < massRadius) {
-          // Non normalizzare a 1, ma mantenere la variazione
-          // mass va da ~100 (500€) a ~500 (100k€)
-          const normalizedMass = mp.mass / 400;
-          const falloff = 1 - (dist / massRadius);
-          const depth = normalizedMass * 0.8 * falloff * falloff;
-          totalZ -= depth;
+        // Controllo se il vertice è DENTRO la cella (quadrato)
+        if (Math.abs(dx) < halfCell && Math.abs(dy) < halfCell) {
+          // Distanza radiale dal centro della cella
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          // Normalizza rispetto alla diagonale massima (angolo della cella)
+          const maxDist = halfCell * Math.SQRT2;
+          const normalizedDist = dist / maxDist;
+
+          // Gaussiana: 1 al centro, ~0.01 agli angoli
+          // k = 4.6 fa sì che exp(-4.6) ≈ 0.01
+          const falloff = Math.exp(-4.6 * normalizedDist * normalizedDist);
+
+          // Profondità: proporzionale alla massa, con cap a 0.25
+          // mass va da ~270 (500€) a ~600 (100k€ con moltiplicatore 1.2)
+          const maxDepth = Math.min(mp.mass / 2000, 0.25);
+          targetZ -= maxDepth * falloff;
         }
       }
 
-      const targetZ = totalZ;
+      // Smooth interpolation verso il target
       const currentZ = positions[i + 2];
       positions[i + 2] = currentZ + (targetZ - currentZ) * 0.1;
     }

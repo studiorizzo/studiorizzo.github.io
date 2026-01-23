@@ -7,6 +7,10 @@ import { useTheme } from '../src/context/ThemeContext';
 // GPUComputationRenderer from three/examples
 class GPUComputationRenderer {
   constructor(sizeX, sizeY, renderer) {
+    console.log('[GPUCompute] Constructor called with size:', sizeX, 'x', sizeY);
+    console.log('[GPUCompute] Renderer:', renderer);
+    console.log('[GPUCompute] Renderer capabilities:', renderer?.capabilities);
+
     this.variables = [];
     this.currentTextureIndex = 0;
     this.sizeX = sizeX;
@@ -22,17 +26,22 @@ class GPUComputationRenderer {
       this.getPassThroughFragmentShader(),
       this.passThruUniforms
     );
+    console.log('[GPUCompute] PassThru shader created');
 
     this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.passThruShader);
     this.scene.add(this.mesh);
+    console.log('[GPUCompute] Constructor complete');
   }
 
   createShaderMaterial(computeFragmentShader, uniforms = {}) {
+    console.log('[GPUCompute] Creating shader material');
+    console.log('[GPUCompute] Fragment shader:', computeFragmentShader.substring(0, 200) + '...');
     const material = new THREE.ShaderMaterial({
       uniforms: uniforms,
       vertexShader: this.getPassThroughVertexShader(),
       fragmentShader: computeFragmentShader,
     });
+    console.log('[GPUCompute] Shader material created:', material);
     return material;
   }
 
@@ -58,6 +67,7 @@ class GPUComputationRenderer {
   }
 
   addVariable(variableName, computeFragmentShader, initialValueTexture) {
+    console.log('[GPUCompute] addVariable:', variableName);
     const material = this.createShaderMaterial(computeFragmentShader);
     const variable = {
       name: variableName,
@@ -71,6 +81,7 @@ class GPUComputationRenderer {
       magFilter: THREE.NearestFilter,
     };
     this.variables.push(variable);
+    console.log('[GPUCompute] Variable added, total variables:', this.variables.length);
     return variable;
   }
 
@@ -79,21 +90,31 @@ class GPUComputationRenderer {
   }
 
   init() {
+    console.log('[GPUCompute] init() called');
+    console.log('[GPUCompute] isWebGL2:', this.renderer.capabilities.isWebGL2);
+    console.log('[GPUCompute] maxVertexTextures:', this.renderer.capabilities.maxVertexTextures);
+
     if (this.renderer.capabilities.isWebGL2 === false && this.renderer.extensions.has('OES_texture_float') === false) {
+      console.error('[GPUCompute] ERROR: No OES_texture_float support');
       return 'No OES_texture_float support for float textures.';
     }
     if (this.renderer.capabilities.maxVertexTextures === 0) {
+      console.error('[GPUCompute] ERROR: No vertex texture support');
       return 'No support for vertex shader textures.';
     }
 
+    console.log('[GPUCompute] WebGL checks passed, initializing', this.variables.length, 'variables');
+
     for (let i = 0; i < this.variables.length; i++) {
       const variable = this.variables[i];
+      console.log('[GPUCompute] Initializing variable:', variable.name);
       variable.renderTargets[0] = this.createRenderTarget(
         this.sizeX, this.sizeY, variable.wrapS, variable.wrapT, variable.minFilter, variable.magFilter
       );
       variable.renderTargets[1] = this.createRenderTarget(
         this.sizeX, this.sizeY, variable.wrapS, variable.wrapT, variable.minFilter, variable.magFilter
       );
+      console.log('[GPUCompute] Render targets created:', variable.renderTargets);
       this.renderTexture(variable.initialValueTexture, variable.renderTargets[0]);
       this.renderTexture(variable.initialValueTexture, variable.renderTargets[1]);
 
@@ -111,6 +132,7 @@ class GPUComputationRenderer {
     }
 
     this.currentTextureIndex = 0;
+    console.log('[GPUCompute] init() complete - SUCCESS');
     return null;
   }
 
@@ -158,7 +180,11 @@ class GPUComputationRenderer {
           uniforms[depVar.name].value = depVar.renderTargets[currentTextureIndex].texture;
         }
       }
-      this.doRenderTarget(variable.material, variable.renderTargets[nextTextureIndex]);
+      try {
+        this.doRenderTarget(variable.material, variable.renderTargets[nextTextureIndex]);
+      } catch (e) {
+        console.error('[GPUCompute] Error in doRenderTarget:', e);
+      }
     }
 
     this.currentTextureIndex = nextTextureIndex;
@@ -243,6 +269,7 @@ const heightmapFragmentShader = `
 // Water material with heightmap displacement
 class WaterShaderMaterial extends THREE.ShaderMaterial {
   constructor(options = {}) {
+    console.log('[WaterShaderMaterial] Constructor called with options:', options);
     super({
       uniforms: {
         heightmap: { value: null },
@@ -327,7 +354,11 @@ class WaterShaderMaterial extends THREE.ShaderMaterial {
 
 // GPGPU Water simulation component
 function GPGPUWater({ onHeightmapUpdate, mousePos, events, currentMonth, currentYear, isDark }) {
+  console.log('[GPGPUWater] Component rendering with props:', { mousePos, currentMonth, currentYear, isDark, eventCount: events?.length });
+
   const { gl } = useThree();
+  console.log('[GPGPUWater] Got WebGL context:', gl);
+
   const gpuComputeRef = useRef(null);
   const heightmapVariableRef = useRef(null);
   const meshRef = useRef();
@@ -336,11 +367,18 @@ function GPGPUWater({ onHeightmapUpdate, mousePos, events, currentMonth, current
 
   // Initialize GPGPU
   useEffect(() => {
+    console.log('[GPGPUWater] useEffect - Initializing GPGPU');
+    console.log('[GPGPUWater] WebGL renderer:', gl);
+    console.log('[GPGPUWater] WIDTH constant:', WIDTH);
+
     const gpuCompute = new GPUComputationRenderer(WIDTH, WIDTH, gl);
 
     const heightmap0 = gpuCompute.createTexture();
+    console.log('[GPGPUWater] Initial texture created:', heightmap0);
+
     // Initialize with slight noise
     const pixels = heightmap0.image.data;
+    console.log('[GPGPUWater] Pixel data length:', pixels?.length);
     for (let i = 0; i < pixels.length; i += 4) {
       pixels[i] = 0;
       pixels[i + 1] = 0;
@@ -349,7 +387,9 @@ function GPGPUWater({ onHeightmapUpdate, mousePos, events, currentMonth, current
     }
     heightmap0.needsUpdate = true;
 
+    console.log('[GPGPUWater] Adding heightmap variable with shader');
     const heightmapVariable = gpuCompute.addVariable('heightmap', heightmapFragmentShader, heightmap0);
+    console.log('[GPGPUWater] Heightmap variable:', heightmapVariable);
     gpuCompute.setVariableDependencies(heightmapVariable, [heightmapVariable]);
 
     heightmapVariable.material.uniforms.mousePos = { value: new THREE.Vector2(10000, 10000) };
@@ -361,24 +401,36 @@ function GPGPUWater({ onHeightmapUpdate, mousePos, events, currentMonth, current
     heightmapVariable.material.uniforms.eventTimes = { value: new Float32Array(42) };
     heightmapVariable.material.uniforms.eventCount = { value: 0 };
     heightmapVariable.material.uniforms.time = { value: 0 };
+    console.log('[GPGPUWater] Uniforms set:', Object.keys(heightmapVariable.material.uniforms));
 
+    console.log('[GPGPUWater] Calling gpuCompute.init()...');
     const error = gpuCompute.init();
     if (error !== null) {
-      console.error('GPUComputationRenderer error:', error);
+      console.error('[GPGPUWater] GPUComputationRenderer error:', error);
+    } else {
+      console.log('[GPGPUWater] GPUCompute initialized successfully!');
     }
 
     gpuComputeRef.current = gpuCompute;
     heightmapVariableRef.current = heightmapVariable;
+    console.log('[GPGPUWater] Refs set, initialization complete');
 
     return () => {
-      // Cleanup
+      console.log('[GPGPUWater] Cleanup - disposing render targets');
       heightmapVariable.renderTargets.forEach(rt => rt.dispose());
     };
   }, [gl]);
 
   // Update events as wave sources
   useEffect(() => {
-    if (!heightmapVariableRef.current) return;
+    console.log('[GPGPUWater] Events useEffect triggered');
+    console.log('[GPGPUWater] heightmapVariableRef.current:', heightmapVariableRef.current);
+    console.log('[GPGPUWater] Events:', events);
+
+    if (!heightmapVariableRef.current) {
+      console.warn('[GPGPUWater] heightmapVariableRef.current is null, skipping events update');
+      return;
+    }
 
     const firstDay = new Date(currentYear, currentMonth, 1);
     const startingDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
@@ -413,6 +465,8 @@ function GPGPUWater({ onHeightmapUpdate, mousePos, events, currentMonth, current
       }
     });
 
+    console.log('[GPGPUWater] Calculated event positions:', eventPositions.length);
+
     const uniforms = heightmapVariableRef.current.material.uniforms;
     const positions = new Array(42).fill(null).map((_, i) => eventPositions[i] || new THREE.Vector2(0, 0));
     const intensities = new Float32Array(42);
@@ -427,22 +481,42 @@ function GPGPUWater({ onHeightmapUpdate, mousePos, events, currentMonth, current
     uniforms.eventIntensities.value = intensities;
     uniforms.eventTimes.value = times;
     uniforms.eventCount.value = eventPositions.length;
+    console.log('[GPGPUWater] Events uniforms updated');
   }, [events, currentMonth, currentYear]);
 
   // Create water material
   const waterMaterial = useMemo(() => {
+    console.log('[GPGPUWater] Creating WaterShaderMaterial, isDark:', isDark);
     const baseColor = isDark ? '#0c1929' : '#1e40af';
     const waveColor = isDark ? '#3b82f6' : '#93c5fd';
-    return new WaterShaderMaterial({
+    const material = new WaterShaderMaterial({
       baseColor,
       waveColor,
       ambientLight: isDark ? 0.2 : 0.4,
     });
+    console.log('[GPGPUWater] WaterShaderMaterial created:', material);
+    return material;
   }, [isDark]);
+
+  // Debug counter for frame logging
+  const frameCountRef = useRef(0);
 
   // Animation loop
   useFrame((state, delta) => {
-    if (!gpuComputeRef.current || !heightmapVariableRef.current) return;
+    frameCountRef.current++;
+
+    // Log every 60 frames (about once per second at 60fps)
+    const shouldLog = frameCountRef.current % 60 === 0;
+
+    if (!gpuComputeRef.current || !heightmapVariableRef.current) {
+      if (shouldLog) {
+        console.warn('[GPGPUWater] useFrame - Missing refs:', {
+          gpuCompute: !!gpuComputeRef.current,
+          heightmapVariable: !!heightmapVariableRef.current
+        });
+      }
+      return;
+    }
 
     clockRef.current += delta;
     const uniforms = heightmapVariableRef.current.material.uniforms;
@@ -451,18 +525,30 @@ function GPGPUWater({ onHeightmapUpdate, mousePos, events, currentMonth, current
     // Update mouse position
     if (mousePos) {
       uniforms.mousePos.value.copy(mousePos);
+      if (shouldLog) console.log('[GPGPUWater] Mouse position:', mousePos);
     } else {
       uniforms.mousePos.value.set(10000, 10000);
     }
 
     // Compute water simulation
-    gpuComputeRef.current.compute();
+    try {
+      gpuComputeRef.current.compute();
+    } catch (e) {
+      console.error('[GPGPUWater] Error during compute():', e);
+    }
 
     // Update water mesh material
     const heightmap = gpuComputeRef.current.getCurrentRenderTarget(heightmapVariableRef.current).texture;
+    if (shouldLog) {
+      console.log('[GPGPUWater] Frame', frameCountRef.current, '- heightmap texture:', heightmap);
+      console.log('[GPGPUWater] materialRef.current:', materialRef.current);
+    }
+
     if (materialRef.current) {
       materialRef.current.uniforms.heightmap.value = heightmap;
       materialRef.current.uniforms.time.value = clockRef.current;
+    } else if (shouldLog) {
+      console.warn('[GPGPUWater] materialRef.current is null!');
     }
 
     if (onHeightmapUpdate) {
@@ -470,10 +556,38 @@ function GPGPUWater({ onHeightmapUpdate, mousePos, events, currentMonth, current
     }
   });
 
+  // Log when mesh/material refs are set
+  useEffect(() => {
+    console.log('[GPGPUWater] meshRef:', meshRef.current);
+    console.log('[GPGPUWater] materialRef after mount:', materialRef.current);
+  }, []);
+
+  console.log('[GPGPUWater] About to render mesh with waterMaterial:', waterMaterial);
+
   return (
-    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+    <mesh
+      ref={(ref) => {
+        meshRef.current = ref;
+        if (ref) {
+          console.log('[GPGPUWater] Mesh ref set:', ref);
+          console.log('[GPGPUWater] Mesh material:', ref.material);
+        }
+      }}
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[0, 0, 0]}
+    >
       <planeGeometry args={[BOUNDS, BOUNDS, WIDTH - 1, WIDTH - 1]} />
-      <primitive object={waterMaterial} ref={materialRef} attach="material" />
+      <primitive
+        object={waterMaterial}
+        ref={(ref) => {
+          materialRef.current = ref;
+          if (ref) {
+            console.log('[GPGPUWater] Material ref set:', ref);
+            console.log('[GPGPUWater] Material uniforms:', ref.uniforms);
+          }
+        }}
+        attach="material"
+      />
     </mesh>
   );
 }
@@ -685,7 +799,10 @@ function WaterInteraction({ onMouseMove, onMouseDown, onMouseUp }) {
 
 // Main scene component
 function Scene({ events, currentMonth, currentYear, onCellClick }) {
+  console.log('[Scene] Rendering with events:', events?.length, 'month:', currentMonth, 'year:', currentYear);
+
   const { mode } = useTheme();
+  console.log('[Scene] Theme mode:', mode);
   const isDark = mode === 'dark';
   const [mousePos, setMousePos] = useState(null);
   const [hoveredDate, setHoveredDate] = useState(null);
@@ -1026,11 +1143,16 @@ function InfoPanel({ isDark }) {
 
 // Main component
 export default function CalendarVariant3() {
+  console.log('[CalendarVariant3] Component mounting/rendering');
+
   const { mode } = useTheme();
+  console.log('[CalendarVariant3] Theme mode:', mode);
   const isDark = mode === 'dark';
 
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  console.log('[CalendarVariant3] Current date:', currentMonth, currentYear);
+
   const [events, setEvents] = useState([
     { type: 'mutui', amount: 1500, date: new Date(new Date().getFullYear(), new Date().getMonth(), 5) },
     { type: 'stipendi', amount: 3000, date: new Date(new Date().getFullYear(), new Date().getMonth(), 10) },
@@ -1093,6 +1215,16 @@ export default function CalendarVariant3() {
         camera={{ position: [0, 15, 12], fov: 45 }}
         style={{ background: 'transparent' }}
         gl={{ antialias: true, alpha: true }}
+        onCreated={(state) => {
+          console.log('[Canvas] Created! State:', state);
+          console.log('[Canvas] GL context:', state.gl);
+          console.log('[Canvas] WebGL capabilities:', state.gl.capabilities);
+          console.log('[Canvas] Scene:', state.scene);
+          console.log('[Canvas] Camera:', state.camera);
+        }}
+        onError={(error) => {
+          console.error('[Canvas] Error:', error);
+        }}
       >
         <Scene
           events={events}

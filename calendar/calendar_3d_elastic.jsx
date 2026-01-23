@@ -182,24 +182,22 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
       for (const mp of massPoints) {
         const dx = ox - mp.x;
         const dy = oy - mp.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Controllo se il vertice è DENTRO la cella (quadrato)
-        if (Math.abs(dx) < halfCell && Math.abs(dy) < halfCell) {
-          // Distanza radiale dal centro della cella
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          // Normalizza rispetto alla diagonale massima (angolo della cella)
-          const maxDist = halfCell * Math.SQRT2;
-          const normalizedDist = dist / maxDist;
+        // Raggio della sfera = metà lato cella (sfera inscritta nel quadrato)
+        const sphereRadius = halfCell;
 
-          // Gaussiana: 1 al centro, ~0.01 agli angoli
-          // k = 4.6 fa sì che exp(-4.6) ≈ 0.01
-          const falloff = Math.exp(-4.6 * normalizedDist * normalizedDist);
-
-          // Profondità: proporzionale alla massa, con cap a 0.4
+        // Solo se il vertice è sotto la sfera (distanza < raggio)
+        if (dist < sphereRadius) {
+          // Profondità massima: proporzionale alla massa (peso della sfera)
           // mass va da ~270 (500€) a ~1500+ (multipli eventi grandi)
-          // Divisore 4000 per permettere accumulo di più eventi
           const maxDepth = Math.min(mp.mass / 4000, 0.4);
-          targetZ -= maxDepth * falloff;
+
+          // Formula calotta sferica: z = -maxDepth * sqrt(1 - (d/R)²)
+          // Crea la forma di una sfera che preme sulla superficie
+          const normalizedDist = dist / sphereRadius;
+          const sphereShape = Math.sqrt(1 - normalizedDist * normalizedDist);
+          targetZ -= maxDepth * sphereShape;
         }
       }
 

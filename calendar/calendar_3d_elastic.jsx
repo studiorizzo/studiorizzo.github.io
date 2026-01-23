@@ -131,14 +131,14 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
   const gridWidth = 7;
   const gridHeight = 6;
   const cellSize = 1;
-  const segmentsPerCell = 8;  // Aumentato per calotta più smooth
+  const segmentsPerCell = 16;  // Molti più segmenti per calotta smooth
 
   const geometry = useMemo(() => {
     const geo = new THREE.PlaneGeometry(
       gridWidth * cellSize,
       gridHeight * cellSize,
-      gridWidth * segmentsPerCell,  // 56 segmenti in X (8 per cella)
-      gridHeight * segmentsPerCell  // 48 segmenti in Y (8 per cella)
+      gridWidth * segmentsPerCell,  // 112 segmenti in X
+      gridHeight * segmentsPerCell  // 96 segmenti in Y
     );
     geo.userData.originalPositions = geo.attributes.position.array.slice();
     return geo;

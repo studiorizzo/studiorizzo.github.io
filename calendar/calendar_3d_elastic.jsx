@@ -176,28 +176,32 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
       const ox = original[i];
       const oy = original[i + 1];
 
+      // Verifica se il vertice è sul perimetro di una cella (bordi della griglia)
+      // Bordi verticali: X = -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5
+      // Bordi orizzontali: Y = 3, 2, 1, 0, -1, -2, -3
+      const epsilon = 0.01;
+      const isOnVerticalBorder = Math.abs(Math.round(ox + 3.5) - (ox + 3.5)) < epsilon;
+      const isOnHorizontalBorder = Math.abs(Math.round(oy + 3) - (oy + 3)) < epsilon;
+      const isOnCellBorder = isOnVerticalBorder || isOnHorizontalBorder;
+
       let targetZ = 0;
 
-      // Per ogni cella con eventi
-      for (const mp of massPoints) {
-        const dx = ox - mp.x;
-        const dy = oy - mp.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+      // Solo i vertici INTERNI alla cella (non sul perimetro) possono essere deformati
+      if (!isOnCellBorder) {
+        for (const mp of massPoints) {
+          const dx = ox - mp.x;
+          const dy = oy - mp.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Raggio della sfera = 80% della metà cella (margine per evitare sbordamenti)
-        const sphereRadius = halfCell * 0.8;  // 0.4 invece di 0.5
+          // Raggio della sfera = 80% della metà cella
+          const sphereRadius = halfCell * 0.8;
 
-        // Solo se il vertice è sotto la sfera (distanza < raggio)
-        if (dist < sphereRadius) {
-          // Profondità massima: proporzionale alla massa (peso della sfera)
-          // mass va da ~270 (500€) a ~1500+ (multipli eventi grandi)
-          const maxDepth = Math.min(mp.mass / 4000, 0.4);
-
-          // Formula calotta sferica: z = -maxDepth * sqrt(1 - (d/R)²)
-          // Crea la forma di una sfera che preme sulla superficie
-          const normalizedDist = dist / sphereRadius;
-          const sphereShape = Math.sqrt(1 - normalizedDist * normalizedDist);
-          targetZ -= maxDepth * sphereShape;
+          if (dist < sphereRadius) {
+            const maxDepth = Math.min(mp.mass / 4000, 0.4);
+            const normalizedDist = dist / sphereRadius;
+            const sphereShape = Math.sqrt(1 - normalizedDist * normalizedDist);
+            targetZ -= maxDepth * sphereShape;
+          }
         }
       }
 

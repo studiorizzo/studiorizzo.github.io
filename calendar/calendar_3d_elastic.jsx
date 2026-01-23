@@ -153,8 +153,10 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
       if (mass > 0) {
         const col = idx % 7;
         const row = Math.floor(idx / 7);
-        const x = (col - 3) * cellSize + cellSize / 2;
-        const y = (2.5 - row) * cellSize - cellSize / 2;
+        // Centro della cella: col va da 0-6, riga da 0-5
+        // La griglia va da -3.5 a +3.5 in X e da -3 a +3 in Y
+        const x = (col - 3) * cellSize;   // centro colonna
+        const y = (2.5 - row) * cellSize; // centro riga
         points.push({ x, y, mass, events, cellIdx: idx });
       }
     });
@@ -180,11 +182,15 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
         const dy = oy - mp.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        const radius = 1.5;
-        if (dist < radius) {
-          const normalizedMass = Math.min(mp.mass / 300, 1);
-          const falloff = 1 - (dist / radius);
-          const depth = normalizedMass * 1.2 * falloff * falloff;
+        // Raggio di influenza proporzionale alla massa
+        const baseRadius = 1.2;
+        const massRadius = baseRadius + Math.min(mp.mass / 600, 0.8);
+        if (dist < massRadius) {
+          // Non normalizzare a 1, ma mantenere la variazione
+          // mass va da ~100 (500€) a ~500 (100k€)
+          const normalizedMass = mp.mass / 400;
+          const falloff = 1 - (dist / massRadius);
+          const depth = normalizedMass * 0.8 * falloff * falloff;
           totalZ -= depth;
         }
       }
@@ -288,7 +294,7 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
         {WEEKDAYS.map((day, i) => (
           <Text
             key={day}
-            position={[(i - 3) * cellSize + cellSize / 2, gridHeight * cellSize / 2 + 0.3, 0.02]}
+            position={[(i - 3) * cellSize, gridHeight * cellSize / 2 + 0.3, 0.02]}
             fontSize={0.22}
             color={colors.primary}
             anchorX="center"
@@ -304,8 +310,9 @@ function ElasticSurface({ calendarDays, eventsByDate, colors, onCellClick, hover
         {calendarDays.map((day, idx) => {
           const col = idx % 7;
           const row = Math.floor(idx / 7);
-          const x = (col - 3) * cellSize + cellSize / 2;
-          const y = (2.5 - row) * cellSize - cellSize / 2;
+          // Centro della cella (stessa formula dei massPoints)
+          const x = (col - 3) * cellSize;
+          const y = (2.5 - row) * cellSize;
           const isHovered = hoveredCell === idx;
 
           return (
